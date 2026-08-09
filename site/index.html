@@ -62,43 +62,56 @@
   </div>
 </div>
 
-<!-- ══════════════════════════════════ HERO ══════════════════════════════ -->
-<section class="hero" id="hero">
-  <div class="hero__stick">
-    <canvas class="hero__canvas" data-frames="120" data-path="assets/seq/" aria-hidden="true"></canvas>
-    <div class="hero__veil"></div>
-    <div class="hero__grain"></div>
-    <div class="hero__prog"><i></i></div>
+<!-- ═════════════════════════════════ STAGE ══════════════════════════════ -->
+<section class="stage" id="stage">
+  <div class="stage__pin">
+    <div class="stage__haze"></div>
+    <div class="stage__road"></div>
+    <canvas class="stage__dust" id="dust" aria-hidden="true"></canvas>
 
-    <div class="hero__in">
-      <div class="hero__kick">Martin Hardware Ltd — Logistics &amp; Transport</div>
-      <h1 class="hero__title">
-        <span class="ln hero__l1"><i>East African freight,</i></span>
-        <span class="ln hero__l2"><i>port to province.</i></span>
+    <!-- Scale is fixed in CSS; JS only ever translates this on X. -->
+    <div class="stage__rig" id="rig">
+      <img class="stage__shadow" src="assets/img/hero-truck-shadow.webp" alt="" aria-hidden="true">
+      <img class="stage__truck" src="assets/img/hero-truck.webp"
+           alt="Martin Logistics tractor unit hauling a forty-foot Twyford container">
+    </div>
+
+    <div class="stage__edges"></div>
+
+    <div class="stage__type">
+      <div class="stage__kick">Martin Hardware Ltd — Logistics &amp; Transport</div>
+      <h1 class="stage__h">
+        <span>Every tonne we carry</span><br>
+        <em><span>moves Rwanda.</span></em>
       </h1>
-      <div class="hero__foot">
-        <p class="hero__sub">
-          A hundred trucks running the corridor between the Indian Ocean and Kigali —
-          our own fleet, our own drivers, every day since 2015.
-        </p>
-        <div class="hero__acts">
-          <a href="contact.html" class="btn btn--fill">
-            <span>Move something</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7V16"/></svg>
-          </a>
-          <a href="fleet.html" class="btn btn--line">
-            <span>The fleet</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7V16"/></svg>
-          </a>
-        </div>
-      </div>
     </div>
 
-    <div class="hero__meta">
-      <div><b>100</b> tractor units</div>
-      <div><b>102</b> trailers</div>
-      <div>Est. <b>2015</b></div>
+    <div class="stage__caps" id="caps">
+      <div class="stage__cap"><b>Leg 01 — Kenya</b><span>Loaded at Mombasa Port.</span></div>
+      <div class="stage__cap"><b>Leg 02 — Border</b><span>Cleared at Gatuna, one desk, one team.</span></div>
+      <div class="stage__cap"><b>Leg 03 — Rwanda</b><span>Kigali by morning. Then every province.</span></div>
     </div>
+
+    <div class="stage__odo">
+      <b><span data-odo>0</span> km</b>
+      <i>Mombasa → Kigali</i>
+    </div>
+
+    <div class="stage__foot">
+      <div class="stage__acts">
+        <a href="contact.html" class="btn btn--fill">
+          <span>Move something</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7V16"/></svg>
+        </a>
+        <a href="fleet.html" class="btn btn--line">
+          <span>The fleet</span>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7V16"/></svg>
+        </a>
+      </div>
+      <div class="stage__cue">Scroll <i></i></div>
+    </div>
+
+    <div class="stage__prog"><i></i></div>
   </div>
 </section>
 
@@ -132,6 +145,24 @@
         <div class="tag">03 — Reach</div>
         <p>Two ocean ports, one landlocked capital, and every province in between — plus onward haulage into the DRC.</p>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════ REEL ════════════════════════════════ -->
+<!-- The frame sequence carries the site from the paper world into the dark one -->
+<section class="reel" id="reel">
+  <div class="reel__pin">
+    <canvas class="reel__canvas" data-frames="120" data-path="assets/seq/" aria-hidden="true"></canvas>
+    <div class="reel__veil"></div>
+    <div class="reel__grain"></div>
+    <div class="reel__in">
+      <div class="kick" style="justify-content:center">On the corridor</div>
+      <h2 class="h h2 reel__h" style="margin-top:20px">1,730 kilometres of road, run on schedule.</h2>
+      <p class="reel__sub">
+        Between the Indian Ocean and the highlands there is one thing that matters:
+        that the truck keeps moving, and someone answers when you call.
+      </p>
     </div>
   </div>
 </section>
