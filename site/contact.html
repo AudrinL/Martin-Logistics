@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Contact — Martin Logistics</title>
 <meta name="description" content="Request a quote from Martin Logistics — KK 13 Ave, Kigali, Rwanda. Phone +250 780 898 115.">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%230B0B0C'/%3E%3Ctext x='50' y='70' font-family='Arial Black' font-size='62' fill='%23EDD836' text-anchor='middle'%3EM%3C/text%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='18' fill='%230B0B0C'/%3E%3Ctext x='50' y='70' font-family='Arial Black' font-size='60' fill='%23EDD836' text-anchor='middle'%3EM%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="css/site.css">
@@ -17,7 +17,7 @@
 <header class="nav solid" id="nav">
   <div class="nav__in">
     <a href="index.html" class="nav__logo" aria-label="Martin Logistics — home">
-      <img src="assets/img/logo-word.png" alt="Martin Logistics">
+      <img src="assets/img/logo-light-word.png" alt="Martin Logistics">
     </a>
     <nav class="nav__links">
       <a href="index.html">Index</a>
@@ -28,10 +28,7 @@
       <a href="contact.html" class="on">Contact</a>
     </nav>
     <div class="nav__end">
-      <a href="contact.html" class="btn btn--fill btn--sm">
-        <span>Request a quote</span>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7V16"/></svg>
-      </a>
+      <a href="contact.html" class="btn btn--fill btn--sm"><span>Get a quote</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7V16"/></svg></a>
       <button class="burger" id="burger" aria-label="Menu"><i></i><i></i></button>
     </div>
   </div>
@@ -54,12 +51,12 @@
 </div>
 
 <section class="phero ink">
-  <img class="phero__ghost" src="assets/img/truck-front-02-cut.webp" alt="" aria-hidden="true">
   <div class="wrap">
     <div class="phero__crumb fade"><a href="index.html">Index</a> — Contact</div>
     <div class="kick fade">Get in touch</div>
-    <h1 class="disp d1 phero__t rv">Got freight?<br>Let's talk.</h1>
+    <h1 class="h h1 phero__t rv">Got freight?<br>Let's talk.</h1>
     <p class="lede phero__s rise">Tell us what needs to move, and where. We'll come back with a route and a price.</p>
+
   </div>
 </section>
 
@@ -68,62 +65,27 @@
     <div class="split2">
       <div class="rise">
         <div class="kick">Request a quote</div>
-        <h2 class="disp d3" style="margin-top:18px;">Send the details.</h2>
-
+        <h2 class="h h3" style="margin-top:16px">Send the details.</h2>
         <form class="form" id="quoteForm" style="margin-top:var(--gap-h)">
-          <div class="fld">
-            <label for="fName">Full name</label>
-            <input type="text" id="fName" name="name" required placeholder="Your name">
-          </div>
-          <div class="fld">
-            <label for="fEmail">Email</label>
-            <input type="email" id="fEmail" name="email" required placeholder="you@company.com">
-          </div>
-          <div class="fld">
-            <label for="fPhone">Phone</label>
-            <input type="tel" id="fPhone" name="phone" placeholder="+250 …">
-          </div>
-          <div class="fld">
-            <label for="fRoute">Route</label>
-            <input type="text" id="fRoute" name="route" placeholder="e.g. Mombasa Port → Kigali">
-          </div>
-          <div class="fld">
-            <label for="fMsg">Cargo &amp; message</label>
-            <textarea id="fMsg" name="message" required placeholder="Cargo type, volume and preferred timeline"></textarea>
-          </div>
-          <button type="submit" class="btn btn--fill">
-            <span>Send request</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7V16"/></svg>
-          </button>
-          <p id="formNote" class="tag" style="margin-top:18px; display:none;">Opening your email client…</p>
+          <div class="fld"><label for="fName">Full name</label><input type="text" id="fName" required placeholder="Your name"></div>
+          <div class="fld"><label for="fEmail">Email</label><input type="email" id="fEmail" required placeholder="you@company.com"></div>
+          <div class="fld"><label for="fPhone">Phone</label><input type="tel" id="fPhone" placeholder="+250 …"></div>
+          <div class="fld"><label for="fRoute">Route</label><input type="text" id="fRoute" placeholder="e.g. Mombasa Port → Kigali"></div>
+          <div class="fld"><label for="fMsg">Cargo &amp; message</label><textarea id="fMsg" required placeholder="Cargo type, volume and preferred timeline"></textarea></div>
+          <button type="submit" class="btn btn--fill"><span>Send request</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H8M17 7V16"/></svg></button>
+          <p id="formNote" class="tag" style="margin-top:16px; display:none">Opening your email client…</p>
         </form>
       </div>
 
       <div class="rise">
         <div class="kick">Reach us directly</div>
-        <h2 class="disp d3" style="margin-top:18px;">Head office.</h2>
-
+        <h2 class="h h3" style="margin-top:16px">Head office.</h2>
         <div class="cinfo">
-          <div class="cinfo__i">
-            <div class="cinfo__l">Address</div>
-            <div class="cinfo__v">KK 13 Ave, Kigali, Rwanda<br>Gasabo District — Free Zone</div>
-          </div>
-          <div class="cinfo__i">
-            <div class="cinfo__l">Phone</div>
-            <div class="cinfo__v"><a href="tel:+250780898115">+250 780 898 115</a><br><a href="tel:+250787460120">+250 787 460 120</a></div>
-          </div>
-          <div class="cinfo__i">
-            <div class="cinfo__l">Email</div>
-            <div class="cinfo__v"><a href="mailto:info@martinhardware.rw">info@martinhardware.rw</a></div>
-          </div>
-          <div class="cinfo__i">
-            <div class="cinfo__l">Hours</div>
-            <div class="cinfo__v">Monday – Saturday, 7:00 – 19:00</div>
-          </div>
-          <div class="cinfo__i">
-            <div class="cinfo__l">Branches</div>
-            <div class="cinfo__v">Gisozi &amp; Kimironko, Kigali</div>
-          </div>
+          <div class="cinfo__i"><div class="cinfo__l">Address</div><div class="cinfo__v">KK 13 Ave, Kigali, Rwanda<br>Gasabo District — Free Zone</div></div>
+          <div class="cinfo__i"><div class="cinfo__l">Phone</div><div class="cinfo__v"><a href="tel:+250780898115">+250 780 898 115</a><br><a href="tel:+250787460120">+250 787 460 120</a></div></div>
+          <div class="cinfo__i"><div class="cinfo__l">Email</div><div class="cinfo__v"><a href="mailto:info@martinhardware.rw">info@martinhardware.rw</a></div></div>
+          <div class="cinfo__i"><div class="cinfo__l">Hours</div><div class="cinfo__v">Monday – Saturday, 7:00 – 19:00</div></div>
+          <div class="cinfo__i"><div class="cinfo__l">Branches</div><div class="cinfo__v">Gisozi &amp; Kimironko, Kigali</div></div>
         </div>
       </div>
     </div>
@@ -139,7 +101,7 @@
   <div class="wrap">
     <div class="ft__top">
       <div>
-        <a href="index.html" class="ft__logo"><img src="assets/img/logo-lockup.png" alt="Martin Logistics"></a>
+        <a href="index.html" class="ft__logo"><img src="assets/img/logo-light.png" alt="Martin Logistics"></a>
         <p class="ft__d">The logistics and transport division of Martin Hardware Ltd — moving freight between the coast and Kigali, and across Rwanda, the DRC and East Africa.</p>
         <a href="https://www.martinhardware.rw" target="_blank" rel="noopener" class="ft__parent">Martin Hardware Ltd ↗</a>
       </div>
@@ -157,10 +119,10 @@
       <div>
         <div class="ft__h">Services</div>
         <ul class="ft__l">
-          <li><a href="services.html">Goods Transportation</a></li>
-          <li><a href="services.html">Cross-Border &amp; Port</a></li>
-          <li><a href="services.html">Abroad Goods Storage</a></li>
-          <li><a href="services.html">Delivery &amp; Warehousing</a></li>
+          <li><a href="services.html">Goods transportation</a></li>
+          <li><a href="services.html">Cross-border &amp; port</a></li>
+          <li><a href="services.html">Abroad goods storage</a></li>
+          <li><a href="services.html">Delivery &amp; warehousing</a></li>
         </ul>
       </div>
       <div>
@@ -173,7 +135,7 @@
       </div>
     </div>
     <div class="ft__bot">
-      <span>© <span id="yr">2026</span> Martin Logistics — A Department of Martin Hardware Ltd</span>
+      <span>© <span id="yr">2026</span> Martin Logistics — A department of Martin Hardware Ltd</span>
       <div class="ft__soc"><a href="#">Facebook</a><a href="#">LinkedIn</a><a href="#">X</a></div>
     </div>
   </div>
