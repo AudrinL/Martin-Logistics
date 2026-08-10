@@ -3,8 +3,7 @@ import Reveal from "@/components/fx/Reveal";
 import Arrow from "@/components/ui/Arrow";
 import { CONTACT, tel } from "@/lib/site";
 
-/* Closing block on every page. build_pages.py used to stamp this; now the
-   headline is just a prop. */
+/* Closing block on every page — the headline is the only part that varies. */
 export default function Cta({
   head,
   parallax = -5,

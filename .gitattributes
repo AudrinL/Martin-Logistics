@@ -1,0 +1,18 @@
+# Normalise text to LF in the repository regardless of each machine's
+# core.autocrlf setting. Windows checkouts still get CRLF in the working tree.
+* text=auto eol=lf
+
+# Binary assets — never touch these, and don't try to diff them.
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.webp  binary
+*.avif  binary
+*.ico   binary
+*.mp4   binary
+*.woff  binary
+*.woff2 binary
+
+# Generated — collapse it in review and keep it out of language stats.
+package-lock.json  linguist-generated=true -diff
+public/assets/**   linguist-generated=true

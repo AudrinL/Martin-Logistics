@@ -12,9 +12,6 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // The pre-migration static site, kept as a reference. It is not part of
-    // the build and is not written to modern lint rules.
-    "site/**",
   ]),
   {
     rules: {

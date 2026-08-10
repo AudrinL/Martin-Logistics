@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
-const nextConfig: NextConfig = {
-  /* config options here */
-};
+/* Nothing to override yet. The site is fully static apart from the quote form,
+   which posts through a mailto: link rather than a route handler. */
+const nextConfig: NextConfig = {};
 
 export default nextConfig;

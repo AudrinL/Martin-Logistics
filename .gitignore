@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Raw design sources — the Gemini renders, the logo lockups and the ~230 raw
+# hero frames. These are inputs to tools/, not to the build: the optimised
+# output that the site actually serves lives in public/assets/ and IS tracked.
+# Kept out of git so a clone stays small; back them up separately.
+/Martin logistics Assets/
+
+# Visual check written by tools/map_dots.py
+/tools/_mapcheck.png

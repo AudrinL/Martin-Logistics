@@ -1,5 +1,5 @@
-/* Single source of truth for the things build_pages.py used to stamp into
-   every page by hand. Change a phone number here, not in six files. */
+/* Single source of truth for the details that repeat across every page.
+   Change a phone number here, not in six files. */
 
 export const NAV = [
   { href: "/", label: "Index" },
