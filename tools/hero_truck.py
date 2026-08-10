@@ -1,78 +1,41 @@
 # -*- coding: utf-8 -*-
-"""Cut the hero truck at full source resolution, plus a soft contact shadow.
+"""Prepare the hero truck and its contact shadow.
 
-The cutout is flood-filled inward from the border so the white bodywork
-survives. The shadow is generated separately from the silhouette's footprint
-so the truck has weight on the ground instead of floating.
+The source is already a clean cutout with a real alpha channel, so the old
+flood-fill/de-halo pass is gone — there is no background left to separate the
+white bodywork from. All that remains is trim, resize, and derive the shadow
+from the silhouette's footprint so the truck has weight on the road instead of
+floating on it.
 """
 import os
-from collections import deque
 
 from PIL import Image, ImageFilter
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
-SRC = os.path.join(ROOT, "Martin logistics Assets", "twyfod truck.png")
+SRC = os.path.join(ROOT, "Martin logistics Assets", "HERO IMAGE.png")
 OUT = os.path.join(ROOT, "public", "assets", "img")
 
-TOL = 22
+# --truck-w tops out at 1120 CSS px, so this covers it on a 2x display without
+# shipping the full 2.5k master to every visitor.
+OUT_W = 1920
 
-im = Image.open(SRC).convert("RGB")
-w, h = im.size
-px = im.load()
+im = Image.open(SRC).convert("RGBA")
+im = im.crop(im.getbbox())
+if im.width > OUT_W:
+    im = im.resize((OUT_W, round(im.height * OUT_W / im.width)), Image.LANCZOS)
 
-corners = [px[2, 2], px[w - 3, 2], px[2, h - 3], px[w - 3, h - 3]]
-bg = tuple(sum(c[i] for c in corners) // 4 for i in range(3))
-
-visited = bytearray(w * h)
-q = deque()
-
-
-def push(x, y):
-    i = y * w + x
-    if visited[i]:
-        return
-    c = px[x, y]
-    if abs(c[0] - bg[0]) <= TOL and abs(c[1] - bg[1]) <= TOL and abs(c[2] - bg[2]) <= TOL:
-        visited[i] = 1
-        q.append((x, y))
-
-
-for x in range(w):
-    push(x, 0); push(x, h - 1)
-for y in range(h):
-    push(0, y); push(w - 1, y)
-
-while q:
-    x, y = q.popleft()
-    if x > 0: push(x - 1, y)
-    if x < w - 1: push(x + 1, y)
-    if y > 0: push(x, y - 1)
-    if y < h - 1: push(x, y + 1)
-
-mask = Image.new("L", (w, h), 255)
-mp = mask.load()
-for y in range(h):
-    row = y * w
-    for x in range(w):
-        if visited[row + x]:
-            mp[x, y] = 0
-
-mask = mask.filter(ImageFilter.GaussianBlur(0.7))
-out = im.convert("RGBA")
-out.putalpha(mask)
-bbox = out.getbbox()
-out = out.crop(bbox)
-out.save(os.path.join(OUT, "hero-truck.png"))
-print("hero-truck.png", out.size, os.path.getsize(os.path.join(OUT, "hero-truck.png")) // 1024, "KB")
-
-out.save(os.path.join(OUT, "hero-truck.webp"), "WEBP", quality=92, method=6)
-print("hero-truck.webp", os.path.getsize(os.path.join(OUT, "hero-truck.webp")) // 1024, "KB")
+dest = os.path.join(OUT, "hero-truck.webp")
+im.save(dest, "WEBP", quality=90, method=6)
+print("hero-truck.webp %dx%d  %d KB  (ratio %.4f)"
+      % (im.width, im.height, os.path.getsize(dest) // 1024, im.height / im.width))
 
 # ── contact shadow ─────────────────────────────────────────────────────────
 # Take the lowest opaque pixel per column, then smear it into a soft pool.
-tw, th = out.size
-a = out.getchannel("A").load()
+# Only the bottom fifth of the silhouette casts contact, so the trailer body
+# does not lay down a shadow the length of the whole vehicle.
+tw, th = im.size
+a = im.getchannel("A").load()
 SH_H = max(60, th // 5)
 shadow = Image.new("L", (tw, SH_H), 0)
 sp = shadow.load()
@@ -82,19 +45,17 @@ for x in range(tw):
         if a[x, y] > 60:
             lowest = y
             break
-    if lowest is None:
-        continue
-    # Wheels sit near the bottom; only the last few percent casts contact.
-    if lowest < th * 0.80:
+    if lowest is None or lowest < th * 0.80:
         continue
     for k in range(SH_H):
-        v = int(160 * (1 - k / SH_H) ** 2.1)
+        v = int(170 * (1 - k / SH_H) ** 2.1)
         if v > sp[x, k]:
             sp[x, k] = v
 
-shadow = shadow.filter(ImageFilter.GaussianBlur(tw * 0.012))
-sh = Image.new("RGBA", (tw, SH_H), (18, 18, 22, 0))
+shadow = shadow.filter(ImageFilter.GaussianBlur(tw * 0.010))
+sh = Image.new("RGBA", (tw, SH_H), (16, 16, 20, 0))
 sh.putalpha(shadow)
-sh.save(os.path.join(OUT, "hero-truck-shadow.webp"), "WEBP", quality=88, method=6)
-print("hero-truck-shadow.webp", sh.size,
-      os.path.getsize(os.path.join(OUT, "hero-truck-shadow.webp")) // 1024, "KB")
+dest = os.path.join(OUT, "hero-truck-shadow.webp")
+sh.save(dest, "WEBP", quality=88, method=6)
+print("hero-truck-shadow.webp %dx%d  %d KB"
+      % (sh.width, sh.height, os.path.getsize(dest) // 1024))

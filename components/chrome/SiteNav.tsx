@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { useLenis } from "lenis/react";
 import { NAV, CONTACT } from "@/lib/site";
 import Arrow from "@/components/ui/Arrow";
 
@@ -15,7 +14,6 @@ export default function SiteNav() {
   const [open, setOpen] = useState(false);
   const [solid, setSolid] = useState(false);
   const [hidden, setHidden] = useState(false);
-  const lenis = useLenis();
   const navRef = useRef<HTMLElement>(null);
 
   // Interior pages have no light hero behind the bar, so it is solid at rest.
@@ -34,16 +32,14 @@ export default function SiteNav() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // The sheet is a scroll trap: lock the body and park Lenis while it's open,
-  // otherwise the page keeps moving underneath the menu.
+  // The sheet is a scroll trap: lock the body while it's open, otherwise the
+  // page keeps moving underneath the menu.
   useEffect(() => {
     document.body.classList.toggle("is-locked", open);
-    if (open) lenis?.stop();
-    else lenis?.start();
     return () => {
       document.body.classList.remove("is-locked");
     };
-  }, [open, lenis]);
+  }, [open]);
 
   const navClass = [
     "nav",
@@ -58,7 +54,7 @@ export default function SiteNav() {
       <header className={navClass} id="nav" ref={navRef}>
         <div className="nav__in">
           <Link href="/" className="nav__logo" aria-label="Martin Logistics — home">
-            <img src="/assets/img/logo-light-word.png" alt="Martin Logistics" />
+            <img src="/assets/img/logo.png" alt="Martin Logistics" />
           </Link>
 
           <nav className="nav__links">

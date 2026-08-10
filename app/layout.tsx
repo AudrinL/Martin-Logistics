@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import { MuseoModerno, Inter_Tight, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-import SmoothScroll from "@/components/chrome/SmoothScroll";
 import SiteNav from "@/components/chrome/SiteNav";
 import Cursor from "@/components/chrome/Cursor";
 import Footer from "@/components/chrome/Footer";
@@ -56,14 +55,12 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${head.variable} ${text.variable} ${mono.variable}`}
     >
       <body>
-        <SmoothScroll>
-          <Cursor />
-          <SiteNav />
-          {children}
-          <Footer />
-          <ScrollFX />
-          <Micro />
-        </SmoothScroll>
+        <Cursor />
+        <SiteNav />
+        {children}
+        <Footer />
+        <ScrollFX />
+        <Micro />
       </body>
     </html>
   );

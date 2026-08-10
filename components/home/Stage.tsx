@@ -64,32 +64,49 @@ export default function Stage() {
       /* At rest the truck holds the composition of the source photograph — cab
          right of centre, air to its left. Scroll drives it left until it has
          fully left the frame. Width is owned by CSS (--truck-w) and never
-         touched here, so the truck cannot zoom or shift perspective mid-run. */
-      const from = () => {
+         touched here, so the truck cannot zoom or shift perspective mid-run.
+
+         Both endpoints are measured on refresh, never inside place(). Reading
+         getComputedStyle and offsetWidth per frame forces a synchronous layout
+         on every one of them, which is what makes a scrub feel like it is
+         dragging the page behind it. ScrollTrigger refreshes on resize, so the
+         cached values cannot go stale. */
+      let fromX = 0;
+      let toX = 0;
+      const measure = () => {
         const f =
           parseFloat(
             getComputedStyle(pin.current!).getPropertyValue("--truck-rest"),
           ) || 0.38;
-        return window.innerWidth * f;
+        fromX = window.innerWidth * f;
+        toX = -((rig.current?.offsetWidth ?? 0) + 40);
       };
-      const to = () => -((rig.current?.offsetWidth ?? 0) + 40);
 
+      // Writing x through the quickSetter skips GSAP's per-call property
+      // parsing — the same transform, resolved once instead of every frame.
+      const setX = gsap.quickSetter(rig.current, "x", "px") as (v: number) => void;
+
+      let lastCap = -1;
       const place = (p: number) => {
         const t = clamp((p - CROSS_IN) / (CROSS_OUT - CROSS_IN), 0, 1);
-        gsap.set(rig.current, { x: lerp(from(), to(), t) });
+        setX(lerp(fromX, toX, t));
 
         // Per-frame values stay off React state — textContent and style are
         // cheaper than a re-render sixty times a second.
         if (prog.current) prog.current.style.width = `${(p * 100).toFixed(2)}%`;
         if (odo.current) odo.current.textContent = Math.round(t * 1730).toLocaleString();
 
-        // The caption index changes about three times across the whole scroll,
-        // so it is cheap enough to be real state.
-        setCap(clamp(Math.floor(t * CAPS.length), 0, CAPS.length - 1));
+        // Three captions across the whole scroll: only touch state when the
+        // index actually moves, so React is not asked to bail out 60x a second.
+        const next = clamp(Math.floor(t * CAPS.length), 0, CAPS.length - 1);
+        if (next !== lastCap) {
+          lastCap = next;
+          setCap(next);
+        }
         scroll.current = p;
       };
 
-      gsap.set(rig.current, { x: from() });
+      measure();
       place(0);
 
       ScrollTrigger.create({
@@ -98,7 +115,10 @@ export default function Stage() {
         end: "bottom bottom",
         scrub: true,
         invalidateOnRefresh: true,
-        onRefresh: (self) => place(self.progress),
+        onRefresh: (self) => {
+          measure();
+          place(self.progress);
+        },
         onUpdate: (self) => place(self.progress),
       });
 

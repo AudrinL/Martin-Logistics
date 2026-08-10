@@ -176,7 +176,7 @@ input,textarea{ font:inherit; color:inherit; }
   width:100%; max-width:var(--maxw); margin-inline:auto; padding-inline:var(--pad);
   display:flex; align-items:center; justify-content:space-between; gap:26px;
 }
-.nav__logo img{ height:17px; width:auto; }
+.nav__logo img{ height:56px; width:auto; }
 .nav__links{ display:flex; align-items:center; gap:32px; }
 .nav__links a{
   font-family:var(--f-mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase;
@@ -232,37 +232,90 @@ input,textarea{ font:inherit; color:inherit; }
    The layout is built around the source image — a long, low vehicle — so
    the type sits in the band above it rather than competing for the middle.
    ══════════════════════════════════════════════════════════════════════════ */
-.stage{ position:relative; height:380vh; background:var(--paper); }
+/* Pin length. This is the single knob for how long the hero holds before the
+   page moves on: the truck's crossing distance is fixed, so this sets the rate,
+   not the travel. 380vh made the first screen feel stuck — nearly four screens
+   of scrolling on one shot reads as a broken page rather than a held beat. */
+.stage{ position:relative; height:240vh; background:var(--paper); }
+
+/* The hero is a cyclorama — a seamless white studio sweep with a strip of road
+   laid on the floor, not a flat wash with a hairline drawn across it. Four
+   layers build it, all of them backgrounds on elements that already existed:
+   pin = wall + floor, haze = the cove, road = the tarmac, edges = the vignette.
+
+   The one thing that makes or breaks a fake cyc is the wall-to-floor joint. A
+   real one is a curve, so there is no seam — every stop around --ground is
+   deliberately soft, and the only hard line in the whole scene is the tyre
+   contact edge at the top of the tarmac. */
 .stage__pin{
   position:sticky; top:0; height:100svh; overflow:hidden;
-  background:linear-gradient(180deg, #FCFBF7 0%, var(--paper) 46%, #E7E2D4 100%);
   --ground: 66%;
   /* Sized to reproduce the source framing: the truck reads at ~62% of the
      frame, cab right of centre, with air to its left. */
   --truck-w: clamp(400px, 62vw, 1120px);
-  /* source is 1558 × 407 */
-  --truck-h: calc(var(--truck-w) * 0.2612);
+  /* source is 1920 × 494 */
+  --truck-h: calc(var(--truck-w) * 0.2573);
   /* Resting X as a fraction of the viewport — where the cab sits at rest. */
   --truck-rest: 0.38;
+  background:
+    /* Key light: the pool a softbox throws on the sweep behind the vehicle.
+       Off-centre vertically so the brightest part sits behind the cab, which
+       is what stops the wall reading as evenly-lit paper. */
+    radial-gradient(94% 68% at 50% 32%,
+      #FFFFFF 0%, rgba(255,255,255,.62) 40%, rgba(255,255,255,0) 76%),
+    /* Wall falling off toward the top corners, through the cove, onto a floor
+       that darkens toward camera. */
+    linear-gradient(180deg,
+      #EDEAE0 0%,
+      #F7F5EF 24%,
+      #FDFCF9 calc(var(--ground) - 14%),
+      #FEFDFB var(--ground),
+      #F1EEE4 calc(var(--ground) + 8%),
+      #E5E0D2 100%);
 }
 
-/* Horizon + road */
-.stage__road{ position:absolute; left:0; right:0; top:var(--ground); height:1px; background:rgba(11,11,12,.16); z-index:1; }
-.stage__road::after{
-  content:''; position:absolute; left:0; right:0; top:0; height:1px;
-  background:repeating-linear-gradient(90deg, rgba(11,11,12,.34) 0 34px, transparent 34px 82px);
-}
+/* The cove: ambient occlusion gathering in the crease where the sweep bends
+   into the floor, plus the shading the vehicle sits into. */
 .stage__haze{
-  position:absolute; left:0; right:0; top:calc(var(--ground) - 26vh); height:26vh; z-index:1;
-  background:linear-gradient(180deg, transparent, rgba(11,11,12,.045));
-  pointer-events:none;
+  position:absolute; left:0; right:0; z-index:1; pointer-events:none;
+  top:calc(var(--ground) - 22vh); height:22vh;
+  background:linear-gradient(180deg,
+    rgba(11,11,12,0) 0%, rgba(11,11,12,.028) 68%, rgba(11,11,12,.055) 100%);
 }
-/* Soft paper vignette so the truck dissolves at the edges instead of clipping */
+
+/* The road: a strip of tarmac on the studio floor. Kept low-contrast on
+   purpose — it should read as asphalt catching studio light, not as a
+   photograph of a highway pasted under the truck. Faded at both ends so it
+   has no cut edge. */
+.stage__road{
+  position:absolute; left:0; right:0; z-index:1; pointer-events:none;
+  top:var(--ground); height:calc(100% - var(--ground));
+  background:linear-gradient(180deg,
+    rgba(26,26,30,.14) 0%, rgba(26,26,30,.105) 38%, rgba(26,26,30,.05) 100%);
+  -webkit-mask-image:linear-gradient(90deg, transparent 0%, #000 13%, #000 87%, transparent 100%);
+  mask-image:linear-gradient(90deg, transparent 0%, #000 13%, #000 87%, transparent 100%);
+}
+/* Tyre contact edge, then the lane dashes further down the apron. */
+.stage__road::after{
+  content:''; position:absolute; inset:0;
+  background:
+    linear-gradient(180deg, rgba(11,11,12,.34) 0 1.5px, transparent 1.5px),
+    repeating-linear-gradient(90deg,
+      rgba(255,255,255,.55) 0 44px, rgba(255,255,255,0) 44px 104px);
+  background-repeat:no-repeat, repeat-x;
+  background-position:0 0, 0 44%;
+  background-size:100% 100%, 104px 2px;
+}
+
+/* Studio vignette: corner falloff like a real lit set, over the side fades
+   that keep the truck dissolving out of frame instead of clipping. */
 .stage__edges{
   position:absolute; inset:0; z-index:4; pointer-events:none;
   background:
     linear-gradient(90deg, var(--paper) 0%, rgba(244,241,232,0) 9%),
-    linear-gradient(270deg, var(--paper) 0%, rgba(244,241,232,0) 9%);
+    linear-gradient(270deg, var(--paper) 0%, rgba(244,241,232,0) 9%),
+    radial-gradient(122% 104% at 50% 40%,
+      rgba(11,11,12,0) 54%, rgba(11,11,12,.075) 100%);
 }
 .stage__dust{ position:absolute; inset:0; z-index:2; pointer-events:none; }
 
@@ -723,7 +776,7 @@ input,textarea{ font:inherit; color:inherit; }
   .cur{ display:none; }
   /* Truck stays generous and crops slightly rather than shrinking to a toy,
      and the readouts share one row under the road so nothing collides. */
-  .stage{ height:340vh; }
+  .stage{ height:210vh; }
   .stage__pin{ --ground:56%; --truck-w:min(760px, 124vw); --truck-rest:0.30; }
   .stage__caps{ width:min(26ch,50vw); top:calc(var(--ground) + 26px); }
   .stage__odo{ top:calc(var(--ground) + 26px); }

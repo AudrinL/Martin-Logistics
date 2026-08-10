@@ -97,7 +97,21 @@ export function useFrameSequence(
         });
       }
     };
-    pump();
+
+    /* The full sequence is several megabytes. Fetching it on mount puts all of
+       that on the critical path for a section that is several screens down,
+       competing with the fonts and the hero for bandwidth. Start two viewports
+       out instead: far enough that the frames are in place well before the
+       scrub reaches them, late enough that first paint is not paying for it. */
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (!e.isIntersecting) return;
+        io.disconnect();
+        pump();
+      },
+      { rootMargin: "200% 0px" },
+    );
+    io.observe(canvas);
 
     size();
     window.addEventListener("resize", size);
@@ -109,6 +123,7 @@ export function useFrameSequence(
 
     return () => {
       cancelled = true;
+      io.disconnect();
       window.removeEventListener("resize", size);
       // Drop decode callbacks so a half-loaded sequence can't paint into a
       // canvas that has already left the page.
