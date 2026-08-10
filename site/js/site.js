@@ -140,47 +140,35 @@
   }
 
   /* ══════════════════════════════════════════════════════════════════════
-     HERO — canvas frame sequence
-     ══════════════════════════════════════════════════════════════════════ */
-  function initHeroSequence() {
-    var hero = document.getElementById("hero");
-    if (!hero) return;
-    var canvas = hero.querySelector(".hero__canvas");
-    if (!canvas) return;
+     Frame sequence renderer (shared)
 
+     Draws a numbered WebP sequence to a canvas, cover-fitted and DPR aware.
+     Frames arrive coarse-to-fine so the whole range is scrubbable early;
+     until a given frame lands, the nearest decoded one is drawn instead.
+     ══════════════════════════════════════════════════════════════════════ */
+  function frameSequence(canvas) {
     var COUNT = parseInt(canvas.dataset.frames, 10) || 120;
     var PATH = canvas.dataset.path || "assets/seq/";
     var ctx = canvas.getContext("2d", { alpha: false });
 
     var frames = new Array(COUNT);
-    var loaded = new Array(COUNT);
-    var current = -1;
+    var ready = new Array(COUNT);
+    var shown = -1;
     var target = 0;
 
-    function sizeCanvas() {
-      var dpr = Math.min(devicePixelRatio || 1, 2);
-      canvas.width = Math.round(canvas.clientWidth * dpr);
-      canvas.height = Math.round(canvas.clientHeight * dpr);
-      draw(true);
-    }
-
-    /* Nearest already-decoded frame, so scrubbing stays responsive while
-       the rest of the sequence is still arriving. */
-    function nearestLoaded(i) {
-      if (loaded[i]) return i;
+    function nearest(i) {
+      if (ready[i]) return i;
       for (var r = 1; r < COUNT; r++) {
-        if (i - r >= 0 && loaded[i - r]) return i - r;
-        if (i + r < COUNT && loaded[i + r]) return i + r;
+        if (i - r >= 0 && ready[i - r]) return i - r;
+        if (i + r < COUNT && ready[i + r]) return i + r;
       }
       return -1;
     }
 
     function draw(force) {
-      var idx = nearestLoaded(clamp(Math.round(target), 0, COUNT - 1));
-      if (idx < 0) return;
-      if (idx === current && !force) return;
-      current = idx;
-
+      var idx = nearest(clamp(Math.round(target), 0, COUNT - 1));
+      if (idx < 0 || (idx === shown && !force)) return;
+      shown = idx;
       var img = frames[idx];
       var cw = canvas.width, ch = canvas.height;
       var s = Math.max(cw / img.naturalWidth, ch / img.naturalHeight);
@@ -188,69 +176,312 @@
       ctx.drawImage(img, (cw - w) / 2, (ch - h) / 2, w, h);
     }
 
-    function load(i, onload) {
+    function size() {
+      var dpr = Math.min(devicePixelRatio || 1, 2);
+      canvas.width = Math.round(canvas.clientWidth * dpr);
+      canvas.height = Math.round(canvas.clientHeight * dpr);
+      draw(true);
+    }
+
+    function load(i, done) {
       if (frames[i]) return;
       var img = new Image();
       img.decoding = "async";
       img.src = PATH + "f" + String(i).padStart(3, "0") + ".webp";
       frames[i] = img;
-      img.onload = function () { loaded[i] = true; if (onload) onload(); };
+      img.onload = function () { ready[i] = true; if (done) done(); };
+      img.onerror = function () { if (done) done(); };
     }
 
-    /* First frame immediately, then a coarse pass so the whole range is
-       scrubbable early, then everything else. */
     load(0, function () { draw(true); });
+
     var order = [];
     for (var step = 8; step >= 1; step = Math.floor(step / 2)) {
       for (var i = 0; i < COUNT; i += step) if (order.indexOf(i) === -1) order.push(i);
       if (step === 1) break;
     }
-    var qi = 0, inflight = 0, MAX = 6;
-    function pump() {
-      while (inflight < MAX && qi < order.length) {
+    var qi = 0, live = 0, MAX = 6;
+    (function pump() {
+      while (live < MAX && qi < order.length) {
         var i = order[qi++];
         if (frames[i]) continue;
-        inflight++;
-        load(i, function () { inflight--; draw(); pump(); });
+        live++;
+        load(i, function () { live--; draw(); pump(); });
       }
+    })();
+
+    size();
+    addEventListener("resize", size);
+
+    return {
+      count: COUNT,
+      seek: function (p) { target = clamp(p, 0, 1) * (COUNT - 1); draw(); }
+    };
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     STAGE — locked camera, the truck crosses right to left
+
+     The rig's size is set in CSS (--truck-w) and never touched here, so the
+     only thing that changes is translateX. No scale, no perspective shift.
+     ══════════════════════════════════════════════════════════════════════ */
+  function initStage() {
+    var stage = document.getElementById("stage");
+    if (!stage) return;
+    var rig = document.getElementById("rig");
+    var caps = stage.querySelectorAll(".stage__cap");
+    var odo = stage.querySelector("[data-odo]");
+    var prog = stage.querySelector(".stage__prog i");
+    var mark = stage.querySelector(".stage__h em");
+
+    /* Entrance — independent of scroll so the page never opens on a blank frame. */
+    if (hasGSAP) {
+      var intro = gsap.timeline({ defaults: { ease: "expo.out" } });
+      intro.from(".stage__kick", { opacity: 0, y: 12, duration: .8 })
+        .from(".stage__h", { opacity: 0, y: 22, duration: 1.1 }, "-=0.5")
+        .to(mark, { scaleX: 1, duration: .9, ease: "power3.inOut" }, "-=0.5")
+        .from(".stage__foot", { opacity: 0, y: 16, duration: .9 }, "-=0.7")
+        .from(".stage__odo", { opacity: 0, duration: .9 }, "-=0.8");
     }
-    pump();
 
-    sizeCanvas();
-    addEventListener("resize", sizeCanvas);
+    if (!hasGSAP || REDUCED) {
+      if (caps[0]) caps[0].style.opacity = 1;
+      return;
+    }
 
-    if (!hasGSAP || REDUCED) { target = 0; draw(true); return; }
+    /* At rest the truck holds the composition of the source photograph —
+       cab right of centre, air to its left. Scrolling drives it left until
+       it has fully left the frame. Width never changes. */
+    function restX() {
+      var f = parseFloat(getComputedStyle(stage.querySelector(".stage__pin"))
+        .getPropertyValue("--truck-rest")) || 0.38;
+      return innerWidth * f;
+    }
+    function from() { return restX(); }
+    function to() { return -(rig.offsetWidth + 40); }
 
-    gsap.to({}, {
-      ease: "none",
-      scrollTrigger: {
-        trigger: hero, start: "top top", end: "bottom bottom", scrub: .4,
-        onUpdate: function (self) {
-          target = self.progress * (COUNT - 1);
-          draw();
-        }
-      }
+    gsap.set(rig, { x: from() });
+
+    var CROSS_IN = 0.05;   // truck starts moving
+    var CROSS_OUT = 0.99;  // still clearing frame as the section hands over
+
+    ScrollTrigger.create({
+      trigger: stage,
+      start: "top top",
+      end: "bottom bottom",
+      scrub: true,
+      invalidateOnRefresh: true,
+      onRefresh: function (self) { place(self.progress); },
+      onUpdate: function (self) { place(self.progress); }
     });
 
-    var fill = hero.querySelector(".hero__prog i");
-    if (fill) {
-      gsap.to(fill, {
-        height: "100%", ease: "none",
-        scrollTrigger: { trigger: hero, start: "top top", end: "bottom bottom", scrub: .3 }
+    function place(p) {
+      var t = clamp((p - CROSS_IN) / (CROSS_OUT - CROSS_IN), 0, 1);
+      gsap.set(rig, { x: lerp(from(), to(), t) });
+
+      if (prog) prog.style.width = (p * 100).toFixed(2) + "%";
+      if (odo) odo.textContent = Math.round(t * 1730).toLocaleString();
+
+      /* Exactly one chapter is ever active — CSS handles the crossfade, so
+         two captions can never stack on top of each other. */
+      var n = caps.length;
+      var active = clamp(Math.floor(t * n), 0, n - 1);
+      for (var i = 0; i < n; i++) {
+        caps[i].classList.toggle("on", i === active);
+      }
+    }
+
+    place(0);
+
+    /* The headline recedes but never leaves — once the truck has gone it is
+       the only thing holding the frame, so it must not drop to nothing. */
+    gsap.to(".stage__type", {
+      opacity: .42, y: -16, ease: "none",
+      scrollTrigger: { trigger: stage, start: "50% top", end: "80% top", scrub: .5 }
+    });
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     REEL — the frame sequence, used as the paper-to-dark transition
+     ══════════════════════════════════════════════════════════════════════ */
+  function initReel() {
+    var reel = document.getElementById("reel");
+    if (!reel) return;
+    var canvas = reel.querySelector(".reel__canvas");
+    if (!canvas) return;
+
+    var seq = frameSequence(canvas);
+    if (!hasGSAP || REDUCED) { seq.seek(0.5); return; }
+
+    ScrollTrigger.create({
+      trigger: reel, start: "top top", end: "bottom bottom", scrub: .4,
+      onUpdate: function (self) { seq.seek(self.progress); }
+    });
+
+    gsap.from(".reel__in", {
+      opacity: 0, y: 26, ease: "none",
+      scrollTrigger: { trigger: reel, start: "top top", end: "28% top", scrub: .6 }
+    });
+    gsap.to(".reel__in", {
+      opacity: 0, y: -26, ease: "none",
+      scrollTrigger: { trigger: reel, start: "68% top", end: "bottom bottom", scrub: .6 }
+    });
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     DUST — Three.js mote field in the stage
+
+     Vanilla three, no React. Gives the paper hero real atmospheric depth:
+     motes sit at varying z, drift with the truck, and parallax on scroll.
+     ══════════════════════════════════════════════════════════════════════ */
+  function initDust() {
+    var canvas = document.getElementById("dust");
+    if (!canvas || !window.THREE || REDUCED || COARSE) return;
+
+    var renderer, scene, camera, points, raf = null;
+    var scroll = 0;
+
+    try {
+      renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: false });
+    } catch (e) {
+      return; // no webgl — the hero is complete without it
+    }
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
+    camera.position.z = 14;
+
+    var N = 700;
+    var pos = new Float32Array(N * 3);
+    var speed = new Float32Array(N);
+    for (var i = 0; i < N; i++) {
+      pos[i * 3] = (Math.random() - 0.5) * 46;
+      pos[i * 3 + 1] = (Math.random() - 0.5) * 22;
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 18;
+      speed[i] = 0.006 + Math.random() * 0.022;
+    }
+    var geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+
+    /* Soft round sprite so motes read as haze, not squares. */
+    var c = document.createElement("canvas");
+    c.width = c.height = 64;
+    var g = c.getContext("2d");
+    var grd = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+    grd.addColorStop(0, "rgba(20,20,24,1)");
+    grd.addColorStop(0.45, "rgba(20,20,24,.5)");
+    grd.addColorStop(1, "rgba(20,20,24,0)");
+    g.fillStyle = grd;
+    g.fillRect(0, 0, 64, 64);
+
+    points = new THREE.Points(geo, new THREE.PointsMaterial({
+      size: 0.1,
+      map: new THREE.CanvasTexture(c),
+      transparent: true,
+      opacity: 0.32,
+      depthWrite: false,
+      sizeAttenuation: true
+    }));
+    scene.add(points);
+
+    function size() {
+      var w = canvas.clientWidth, h = canvas.clientHeight;
+      if (!w || !h) return;
+      renderer.setSize(w, h, false);
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+    }
+    size();
+    addEventListener("resize", size);
+
+    var arr = geo.getAttribute("position");
+    function tick() {
+      for (var i = 0; i < N; i++) {
+        arr.array[i * 3] -= speed[i];           // drift left, with the truck
+        if (arr.array[i * 3] < -23) arr.array[i * 3] = 23;
+      }
+      arr.needsUpdate = true;
+      camera.position.y = scroll * 3.2;         // parallax against the page
+      points.rotation.z = scroll * 0.06;
+      renderer.render(scene, camera);
+      raf = requestAnimationFrame(tick);
+    }
+
+    /* Only run while the stage is on screen. */
+    var stage = document.getElementById("stage");
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) {
+        if (e.isIntersecting && raf === null) tick();
+        else if (!e.isIntersecting && raf !== null) { cancelAnimationFrame(raf); raf = null; }
+      });
+    }, { threshold: 0 });
+    if (stage) io.observe(stage);
+
+    if (hasGSAP && stage) {
+      ScrollTrigger.create({
+        trigger: stage, start: "top top", end: "bottom bottom", scrub: true,
+        onUpdate: function (self) { scroll = self.progress; }
+      });
+    }
+  }
+
+  /* ══════════════════════════════════════════════════════════════════════
+     UI micro-interactions — Motion (the vanilla build of Framer Motion)
+     ══════════════════════════════════════════════════════════════════════ */
+  function initMicro() {
+    var M = window.Motion;
+    if (!M || REDUCED) return;
+
+    /* Call these as methods, never detached: Motion's animate() silently
+       no-ops when it loses its `this`, with no error to tell you why. */
+    function anim(el, to, opts) { return M.animate(el, to, opts); }
+    function spring(stiffness, damping) {
+      return { type: "spring", stiffness: stiffness, damping: damping };
+    }
+
+    /* Springy press on every pill button */
+    document.querySelectorAll(".btn").forEach(function (b) {
+      b.addEventListener("pointerdown", function () {
+        anim(b, { scale: 0.965 }, { duration: .12 });
+      });
+      ["pointerup", "pointerleave"].forEach(function (ev) {
+        b.addEventListener(ev, function () {
+          anim(b, { scale: 1 }, spring(420, 18));
+        });
+      });
+    });
+
+    /* Nav items lift a hair on hover */
+    document.querySelectorAll(".nav__links a").forEach(function (a) {
+      a.addEventListener("pointerenter", function () { anim(a, { y: -2 }, spring(500, 20)); });
+      a.addEventListener("pointerleave", function () { anim(a, { y: 0 }, spring(500, 22)); });
+    });
+
+    /* Menu items cascade in when the sheet opens */
+    var burger = document.getElementById("burger");
+    var sheet = document.getElementById("sheet");
+    if (burger && sheet) {
+      burger.addEventListener("click", function () {
+        if (!sheet.classList.contains("open")) return;
+        anim(sheet.querySelectorAll(".sheet__nav a"),
+             { opacity: [0, 1], y: [22, 0] },
+             { delay: M.stagger(0.05, { startDelay: 0.16 }), duration: .5 });
       });
     }
 
-    /* Entrance */
-    gsap.timeline()
-      .from(".hero__kick", { opacity: 0, y: 14, duration: .7, ease: "power2.out" })
-      .from(".hero__title .ln > i", { yPercent: 108, duration: 1, ease: "expo.out", stagger: .08 }, "-=0.4")
-      .from(".hero__foot", { opacity: 0, y: 18, duration: .8, ease: "power2.out" }, "-=0.55")
-      .from(".hero__meta", { opacity: 0, duration: .8 }, "-=0.6");
+    /* Stat cards settle as they land */
+    document.querySelectorAll(".num__c").forEach(function (el) {
+      M.inView(el, function () {
+        anim(el, { y: [14, 0], opacity: [0, 1] }, spring(240, 26));
+      }, { amount: 0.4 });
+    });
 
-    /* Type recedes as the truck arrives */
-    gsap.timeline({ scrollTrigger: { trigger: hero, start: "top top", end: "bottom bottom", scrub: .6 } })
-      .to(".hero__in", { opacity: 0, y: -26, ease: "none" }, .35)
-      .to(".hero__veil", { opacity: 1.25, ease: "none" }, 0);
+    /* Fleet cards lift under the cursor */
+    document.querySelectorAll(".rail__card").forEach(function (c) {
+      c.addEventListener("pointerenter", function () { anim(c, { y: -8 }, spring(300, 24)); });
+      c.addEventListener("pointerleave", function () { anim(c, { y: 0 }, spring(300, 26)); });
+    });
   }
 
   /* ══════════════════════════════════════════════════════════════════════
@@ -649,8 +880,11 @@
     initPeek();
     initMarquees();
     initParallax();
+    initReel();
+    initDust();
+    initMicro();
     runPreloader(function () {
-      initHeroSequence();
+      initStage();
       if (hasGSAP) ScrollTrigger.refresh();
     });
   });
