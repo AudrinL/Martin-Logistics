@@ -1,7 +1,6 @@
 import Beacon from "@/components/home/Beacon";
 import Reel from "@/components/home/Reel";
 import Network from "@/components/home/Network";
-import Rail from "@/components/home/Rail";
 import Services from "@/components/home/Services";
 import Cta from "@/components/sections/Cta";
 import Reveal from "@/components/fx/Reveal";
@@ -110,7 +109,6 @@ export default function Home() {
       </section>
 
       <Reel />
-      <Rail />
       <Beacon />
       <Services />
 
