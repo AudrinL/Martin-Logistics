@@ -741,31 +741,16 @@ input,textarea{ font:inherit; color:inherit; }
 .ftmark{
   position:relative;
   padding-top:clamp(40px,6vh,76px);
-  overflow:hidden;
   user-select:none;
-  /* Column, so the inline-block lines stack instead of flowing side by side,
-     and flex-start so each keeps its own measured width. */
-  display:flex; flex-direction:column; align-items:flex-start;
+  display:flex; justify-content:center;
 }
-/* Carries the line styles for measurement only. Not display:none — that would
-   stop it computing a usable font. */
+.ftmark__cv{ display:block; }
+/* Carries the heading styles for measurement only. Not display:none — that
+   would stop it computing a usable font. */
 .ftmark__probe{
   position:absolute; visibility:hidden; height:0; pointer-events:none;
+  font-family:var(--f-head); font-weight:600; letter-spacing:-.022em;
 }
-.ftmark__l{
-  /* inline-block, not block: the box then reports the width of the text it
-     contains, so a mis-fit is visible instead of being hidden by a full-width
-     block that always matches its container. */
-  display:inline-block;
-  font-family:var(--f-head); font-weight:600;
-  letter-spacing:-.022em; line-height:.82;
-  white-space:nowrap;
-  /* Dissolves into the bottom of the page rather than sitting on it. */
-  background:linear-gradient(180deg, rgba(244,241,232,.30), rgba(244,241,232,.05));
-  -webkit-background-clip:text; background-clip:text;
-  color:transparent;
-}
-.ftmark__l--est{ font-size:8.6vw; }
 
 .ft__bot{
   border-top:1px solid var(--rule-ink); margin-top:clamp(28px,4vh,48px);

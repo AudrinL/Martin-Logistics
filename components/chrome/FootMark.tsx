@@ -1,135 +1,335 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { prepareWithSegments, measureNaturalWidth } from "@chenglou/pretext";
 
-/* The footer wordmark: "Martin Logistics" set to fill the column edge to edge,
-   exactly, at whatever width the viewport happens to be.
+/* The footer wordmark, built out of particles.
 
-   CSS cannot do this. `font-size: 9vw` is a guess that only lines up at one
-   viewport, and the moment the heading font changes — as it just did, from
-   MuseoModerno to ABeeZee — every hand-tuned vw number is wrong again. So the
-   size is measured rather than guessed: pretext measures the string once per
-   font at a reference size, and because text width scales linearly with
-   font-size, the fitted size is one division. Resizing re-runs that division
-   and nothing else — no reflow, no getBoundingClientRect, no measuring div.
+   The type is still measured rather than guessed: pretext measures the string
+   once per font at a reference size, and because width scales linearly with
+   font-size, the size that fills the column exactly is one division. That
+   matters more here than it did for plain text — the particles are sampled
+   from a canvas rendering of the mark, so if the size were a `vw` guess the
+   sampled cloud would be cropped or float in dead space.
 
-   Below a legibility floor the mark stacks onto two lines and each word is
-   fitted independently, which is why "Martin" ends up larger than
-   "Logistics" — both are flush to the same two edges. */
+   Pipeline: fit with pretext -> draw the mark once to an offscreen canvas ->
+   read the alpha channel -> every sufficiently opaque pixel on a grid becomes
+   a particle target. From then on nothing touches text again; it is 8k points
+   easing toward their targets, drifting, and pushing away from the cursor. */
 
 const ONE_LINE = "Martin Logistics";
 const STACKED = ["Martin", "Logistics"];
 
-/* Measure at a reference size and scale the result. Any size works; 100 keeps
-   the arithmetic legible when debugging. */
 const REF = 100;
-/* Must track .h in globals.css — see the accuracy contract in the pretext
-   docs. Expressed in em so it scales with the fitted size the way CSS does. */
 const TRACK_EM = -0.022;
-/* Under this fitted size a single line reads as small print rather than as a
-   mark, so stack instead. */
 const STACK_BELOW = 56;
 
-type Line = { text: string; size: number };
+/* Sampling grid in CSS px. Lower is denser and prettier and costs more; this
+   is tuned to land near TARGET_MAX particles at desktop width. */
+const STEP_MIN = 3;
+const TARGET_MAX = 9000;
+/* Alpha above which a sampled pixel counts as ink. */
+const INK = 90;
+
+const DOT = 1.6;          /* particle size in CSS px */
+const EASE = 0.075;       /* pull toward target */
+const FRICTION = 0.86;
+const PUSH_R = 120;       /* cursor repel radius, CSS px */
+const PUSH_F = 34;
+const DRIFT = 0.22;       /* idle wander */
+
+type P = {
+  hx: number; hy: number;   /* home / target */
+  x: number; y: number;
+  vx: number; vy: number;
+  ph: number;               /* drift phase */
+  a: number;                /* alpha bucket 0..BUCKETS-1 */
+  gold: boolean;
+};
+
+const BUCKETS = 5;
 
 export default function FootMark() {
   const box = useRef<HTMLDivElement>(null);
-  /* Carries the real .ftmark__l styles so the font can be read off something
-     that is actually set in the heading face. Reading it off the container
-     silently measures the inherited body font instead — the numbers still
-     look plausible, which is what makes it a nasty bug. */
+  const cv = useRef<HTMLCanvasElement>(null);
+  /* Carries the real heading styles so the font can be read off something
+     actually set in the heading face. Reading it off the container silently
+     measures the inherited body font instead, and the numbers still look
+     plausible — which is what makes that bug nasty. */
   const probe = useRef<HTMLSpanElement>(null);
-  const [lines, setLines] = useState<Line[] | null>(null);
 
   useEffect(() => {
     const el = box.current;
+    const canvas = cv.current;
     const ref = probe.current;
-    if (!el || !ref) return;
+    if (!el || !canvas || !ref) return;
+
+    const ctx = canvas.getContext("2d", { alpha: true });
+    if (!ctx) return;
+
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
     let alive = true;
-    /* Prepared handles are keyed by text + font. prepare() is the expensive
-       half of the library; layout is meant to be the only thing that repeats.
-       Here every resize reuses these. */
-    let cache = new Map<string, number>();
+    let raf = 0;
+    let particles: P[] = [];
+    let dpr = 1;
+    let w = 0;
+    let h = 0;
     let font = "";
+    let entered = 0;        /* 0..1 assembly progress */
+    let inView = false;
+    const widths = new Map<string, number>();
+    const pointer = { x: -9999, y: -9999 };
 
-    /* Read the font off the element itself rather than hardcoding it, so the
-       measurement stays correct through font swaps without anyone remembering
-       to update a string in two places. */
-    const fontFor = (size: number) => {
+    const fontAt = (size: number) => {
       const cs = getComputedStyle(ref);
       return `${cs.fontWeight} ${size}px ${cs.fontFamily}`;
     };
 
-    /* Natural width of a string at REF px, measured once and remembered. */
-    const widthAt100 = (text: string) => {
-      const hit = cache.get(text);
+    /* Natural width at REF px — the expensive pretext call, memoised. */
+    const natural = (text: string) => {
+      const hit = widths.get(text);
       if (hit !== undefined) return hit;
-      const prepared = prepareWithSegments(text, font, {
-        letterSpacing: TRACK_EM * REF,
-      });
-      const w = measureNaturalWidth(prepared);
-      cache.set(text, w);
-      return w;
+      const w0 = measureNaturalWidth(
+        prepareWithSegments(text, font, { letterSpacing: TRACK_EM * REF }),
+      );
+      widths.set(text, w0);
+      return w0;
     };
 
-    const fit = () => {
+    /* Fit, draw, sample. Rebuilds the whole particle set — only on resize. */
+    const build = () => {
       if (!alive) return;
       const avail = el.clientWidth;
-      if (!avail) return;
+      if (!avail || !font) return;
 
-      const size = (text: string) => (avail / widthAt100(text)) * REF;
+      const sizeOf = (t: string) => (avail / natural(t)) * REF;
 
-      const single = size(ONE_LINE);
-      setLines(
+      const single = sizeOf(ONE_LINE);
+      const lines =
         single >= STACK_BELOW
           ? [{ text: ONE_LINE, size: single }]
-          : STACKED.map((text) => ({ text, size: size(text) })),
-      );
+          : STACKED.map((text) => ({ text, size: sizeOf(text) }));
+
+      /* Vertical metrics from the font itself rather than a guessed
+         multiplier, so descenders ("g") are never clipped. */
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      ctx.letterSpacing = `${TRACK_EM * lines[0].size}px`;
+
+      const rows = lines.map((l) => {
+        ctx.font = fontAt(l.size);
+        ctx.letterSpacing = `${TRACK_EM * l.size}px`;
+        const m = ctx.measureText(l.text);
+        return {
+          ...l,
+          asc: m.actualBoundingBoxAscent,
+          desc: m.actualBoundingBoxDescent,
+          w: m.width,
+        };
+      });
+
+      const GAP = 0.06;
+      let total = 0;
+      for (const r of rows) total += r.asc + r.desc + r.size * GAP;
+      total -= rows[0].size * GAP;
+
+      w = avail;
+      h = Math.ceil(total);
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      canvas.style.width = `${w}px`;
+      canvas.style.height = `${h}px`;
+
+      /* Draw the mark opaque; only the alpha channel is read. */
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      ctx.fillStyle = "#fff";
+      ctx.textAlign = "center";
+      ctx.textBaseline = "alphabetic";
+
+      let y = 0;
+      for (const r of rows) {
+        ctx.font = fontAt(r.size);
+        ctx.letterSpacing = `${TRACK_EM * r.size}px`;
+        y += r.asc;
+        ctx.fillText(r.text, w / 2, y);   /* centred */
+        y += r.desc + r.size * GAP;
+      }
+
+      const img = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+
+      /* Choose a grid step that keeps the count near TARGET_MAX regardless of
+         viewport, so a wide desktop does not cost 40k points. */
+      let step = STEP_MIN;
+      /* Measured ink ratio for this mark at this weight: roughly 31% of the
+         sampled grid lands on a glyph. Guessing low here is the failure that
+         matters — the cap silently stops engaging and a wide viewport builds
+         far more particles than intended. */
+      const inkEst = ((w * h) / (step * step)) * 0.31;
+      if (inkEst > TARGET_MAX) step = STEP_MIN * Math.sqrt(inkEst / TARGET_MAX);
+
+      const next: P[] = [];
+      for (let py = 0; py < h; py += step) {
+        for (let px = 0; px < w; px += step) {
+          const sx = Math.round(px * dpr);
+          const sy = Math.round(py * dpr);
+          const a = img[(sy * canvas.width + sx) * 4 + 3];
+          if (a < INK) continue;
+          /* Alpha bucket from vertical position reproduces the gradient the
+             plain-text version had: bright at the top, dissolving downward. */
+          const t = py / h;
+          const bucket = Math.min(
+            BUCKETS - 1,
+            Math.floor((1 - t * 0.78) * BUCKETS * 0.999),
+          );
+          next.push({
+            hx: px,
+            hy: py,
+            x: px,
+            y: py,
+            vx: 0,
+            vy: 0,
+            ph: Math.random() * Math.PI * 2,
+            a: bucket,
+            gold: Math.random() < 0.035,
+          });
+        }
+      }
+
+      /* Scatter for the assembly. Seeded from the home position so the cloud
+         collapses inward rather than sliding in from one side. */
+      for (const p of next) {
+        const ang = Math.random() * Math.PI * 2;
+        const r = 60 + Math.random() * 260;
+        p.x = p.hx + Math.cos(ang) * r;
+        p.y = p.hy + Math.sin(ang) * r * 0.45;
+      }
+
+      particles = next;
+
+      /* The solid mark is still sitting on the canvas from the sampling pass.
+         Clear it: the animation only paints once the footer is in view, so
+         leaving it would show hard type that pops into particles on scroll. */
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+
+      if (reduced) {
+        entered = 1;
+        for (const p of particles) {
+          p.x = p.hx;
+          p.y = p.hy;
+        }
+        draw();
+      }
+    };
+
+    const draw = () => {
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      /* Batched by alpha bucket: five globalAlpha changes per frame instead
+         of one per particle. */
+      for (let b = 0; b < BUCKETS; b++) {
+        ctx.globalAlpha = (0.06 + (b / (BUCKETS - 1)) * 0.30) * entered;
+        ctx.fillStyle = "#F4F1E8";
+        for (const p of particles) {
+          if (p.a !== b || p.gold) continue;
+          ctx.fillRect(p.x, p.y, DOT, DOT);
+        }
+        ctx.fillStyle = "#EDD836";
+        for (const p of particles) {
+          if (p.a !== b || !p.gold) continue;
+          ctx.fillRect(p.x, p.y, DOT, DOT);
+        }
+      }
+      ctx.globalAlpha = 1;
+    };
+
+    const tick = () => {
+      if (!alive) return;
+      raf = requestAnimationFrame(tick);
+      if (!inView) return;
+
+      entered += (1 - entered) * 0.03;
+      const t = performance.now() * 0.001;
+
+      for (const p of particles) {
+        /* home pull */
+        p.vx += (p.hx - p.x) * EASE;
+        p.vy += (p.hy - p.y) * EASE;
+
+        /* idle drift, per-particle phase so it never reads as a single wave */
+        p.vx += Math.cos(t * 0.7 + p.ph) * DRIFT * 0.5;
+        p.vy += Math.sin(t * 0.9 + p.ph) * DRIFT * 0.5;
+
+        /* cursor repel */
+        const dx = p.x - pointer.x;
+        const dy = p.y - pointer.y;
+        const d2 = dx * dx + dy * dy;
+        if (d2 < PUSH_R * PUSH_R) {
+          const d = Math.sqrt(d2) || 1;
+          const f = (1 - d / PUSH_R) * PUSH_F;
+          p.vx += (dx / d) * f;
+          p.vy += (dy / d) * f;
+        }
+
+        p.vx *= FRICTION;
+        p.vy *= FRICTION;
+        p.x += p.vx;
+        p.y += p.vy;
+      }
+      draw();
+    };
+
+    const onMove = (e: PointerEvent) => {
+      const r = canvas.getBoundingClientRect();
+      pointer.x = e.clientX - r.left;
+      pointer.y = e.clientY - r.top;
+    };
+    const onLeave = () => {
+      pointer.x = pointer.y = -9999;
     };
 
     /* Canvas measureText silently measures the fallback face if the webfont
        has not landed, and every number after that is confidently wrong. */
     document.fonts.ready.then(() => {
       if (!alive) return;
-      font = fontFor(REF);
-      cache = new Map();
-      fit();
+      font = fontAt(REF);
+      widths.clear();
+      build();
+      if (!reduced) raf = requestAnimationFrame(tick);
     });
 
     const ro = new ResizeObserver(() => {
-      if (font) fit();
+      if (font) build();
     });
     ro.observe(el);
 
+    /* Only animate while the footer is actually on screen. */
+    const io = new IntersectionObserver(
+      ([e]) => {
+        inView = e.isIntersecting;
+      },
+      { rootMargin: "120px" },
+    );
+    io.observe(el);
+
+    window.addEventListener("pointermove", onMove, { passive: true });
+    window.addEventListener("pointerleave", onLeave, { passive: true });
+
     return () => {
       alive = false;
+      cancelAnimationFrame(raf);
       ro.disconnect();
+      io.disconnect();
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerleave", onLeave);
     };
   }, []);
 
   return (
-    <div className="ftmark" ref={box} aria-label="Martin Logistics" role="img">
-      <span className="ftmark__l ftmark__probe" ref={probe} aria-hidden />
-      {lines === null ? (
-        /* Pre-measurement and pre-JS: a vw approximation, deliberately a
-           little under so the fitted size only ever grows into place. */
-        <span className="ftmark__l ftmark__l--est" aria-hidden>
-          {ONE_LINE}
-        </span>
-      ) : (
-        lines.map((l) => (
-          <span
-            className="ftmark__l"
-            key={l.text}
-            style={{ fontSize: `${l.size}px` }}
-            aria-hidden
-          >
-            {l.text}
-          </span>
-        ))
-      )}
+    <div className="ftmark" ref={box} role="img" aria-label="Martin Logistics">
+      <span className="ftmark__probe" ref={probe} aria-hidden />
+      <canvas className="ftmark__cv" ref={cv} aria-hidden />
     </div>
   );
 }
