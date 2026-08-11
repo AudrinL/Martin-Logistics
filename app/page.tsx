@@ -1,4 +1,3 @@
-import GlassHero from "@/components/home/GlassHero";
 import Stage from "@/components/home/Stage";
 import Beacon from "@/components/home/Beacon";
 import Reel from "@/components/home/Reel";
@@ -78,7 +77,10 @@ function TickItems() {
 export default function Home() {
   return (
     <>
-      <GlassHero />
+      {/* The globe is the hero. It ends on ink, and Stage opens on paper, so a
+          short ramp carries one into the other instead of cutting. */}
+      <Network />
+      <div className="blend blend--ink-paper" aria-hidden />
       <Stage />
 
       <div className="tick" data-marquee="46">
@@ -108,7 +110,6 @@ export default function Home() {
       </section>
 
       <Reel />
-      <Network />
       <Rail />
       <Beacon />
       <Services />

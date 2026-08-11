@@ -234,6 +234,18 @@ input,textarea{ font:inherit; color:inherit; }
 .nav .btn--fill::after{ background:var(--yellow); }
 .nav .btn--fill:hover{ color:var(--ink); }
 
+/* The homepage hero is the near-black globe now, and the bar sits transparent
+   over it until the first 30px of scroll. Ink type is invisible there, so the
+   contents flip to paper for exactly that window. Interior pages render the
+   bar .solid at rest, so this only ever applies over the globe. */
+.nav:not(.solid) .nav__links a{ color:var(--on-ink-2); }
+.nav:not(.solid) .nav__links a:hover,
+.nav:not(.solid) .nav__links a.on{ color:var(--on-ink-1); }
+.nav:not(.solid) .nav__links a::after{ background:var(--on-ink-1); }
+.nav:not(.solid) .burger i{ background:var(--on-ink-1); }
+.nav:not(.solid) .btn--fill{ background:var(--yellow); color:var(--ink); }
+.nav:not(.solid) .btn--fill::after{ background:var(--paper); }
+
 .burger{ display:none; width:28px; height:12px; position:relative; z-index:820; }
 /* Ink against the yellow bar — but the sheet it opens is full-bleed ink, so
    the bars have to flip back to paper once it is open. */
@@ -558,7 +570,17 @@ input,textarea{ font:inherit; color:inherit; }
 /* ══════════════════════════════════════════════════════════════════════════
    NETWORK — dotted Africa + scroll-driven routes
    ══════════════════════════════════════════════════════════════════════════ */
-.net{ position:relative; height:400vh; background:var(--ink); }
+/* The hero. 250vh, not the 400vh it ran at mid-page: as the first thing on the
+   page the scrub is what the visitor is judging the site by, and four screens
+   of pinned scroll before anything else moves reads as a stuck page rather
+   than a deliberate one. The globe's arc is unchanged, just covered faster. */
+.net{ position:relative; height:250vh; background:var(--ink); }
+
+/* Carries ink into paper between the globe and the studio sweep. A hard cut
+   between two full-bleed backgrounds is the one thing that would give away
+   that these were built as separate sections. */
+.blend{ height:clamp(140px,26vh,300px); }
+.blend--ink-paper{ background:linear-gradient(180deg, var(--ink) 0%, #6E6A60 58%, var(--paper) 100%); }
 .net__stick{ position:sticky; top:0; height:100svh; overflow:hidden; }
 /* Grabbable. touch-action:pan-y keeps vertical scrolling with the page while
    handing horizontal drags to the globe. */
@@ -866,7 +888,7 @@ input,textarea{ font:inherit; color:inherit; }
   .cta__truck{ width:min(104%,640px); right:-4%; bottom:0; }
   .svcblk{ grid-template-columns:1fr; gap:12px; }
   .tl__row{ grid-template-columns:1fr; gap:10px; }
-  .net{ height:340vh; }
+  .net{ height:220vh; }
   .net__readout{ position:static; text-align:left; margin-top:18px; }
   .net__ui{ justify-content:flex-start; gap:auto; }
   .net__legs{ margin-top:auto; }
