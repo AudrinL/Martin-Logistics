@@ -13,10 +13,18 @@ python tools/prep_assets.py
 
 ## Requirements
 
-Pillow is the only dependency:
+Pillow for the Python scripts:
 
 ```bash
 pip install Pillow
+```
+
+`world_dots.mjs` is Node, and pulls its map data from npm at build time only —
+nothing it uses is a runtime dependency of the site:
+
+```bash
+npm install --no-save world-atlas@2 topojson-client d3-geo
+node tools/world_dots.mjs
 ```
 
 ## Scripts
@@ -24,8 +32,8 @@ pip install Pillow
 | Script | Reads | Writes |
 | --- | --- | --- |
 | `prep_assets.py` | `hero video scroll/*.jpg`, white logo lockup | `public/assets/seq/f000–f119.webp`, `public/assets/img/logo-light*.png` |
-| `hero_truck.py` | `twyfod truck.png` | `public/assets/img/hero-truck.{png,webp}`, `hero-truck-shadow.webp` |
-| `map_dots.py` | `africa map.jpg` | `public/assets/africa-dots.json` |
+| `hero_truck.py` | `HERO IMAGE.png` | `public/assets/img/hero-truck.webp`, `hero-truck-shadow.webp` |
+| `world_dots.mjs` | Natural Earth 110m land (npm, build-only) | `public/assets/world-dots.json` |
 
 ### `prep_assets.py`
 

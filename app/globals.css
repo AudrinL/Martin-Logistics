@@ -43,6 +43,15 @@
   --maxw: 1560px;
   --nav-h: 76px;
 
+  /* Radius scale. Three steps, deliberately few — the point is that everything
+     of a given weight rounds the same amount. Full-bleed sections (the hero
+     sweep, the reel, the map's own section) stay square: rounding something
+     that runs edge to edge just reveals the page behind it. Buttons keep their
+     999px pill, which is its own decision and predates this scale. */
+  --r-sm:  8px;   /* inputs, chips, small controls */
+  --r-md:  14px;  /* images, figures, embedded media */
+  --r-lg:  20px;  /* cards and panels */
+
   --bay:   clamp(120px, 16vh, 220px);
   --bay-s: clamp(80px, 10vh, 140px);
   --gap-h: clamp(44px, 6vh, 84px);
@@ -170,10 +179,8 @@ input,textarea{ font:inherit; color:inherit; }
    small mono type is a headache, and this has to sit under the logo without
    competing with the red in it. */
 .nav.solid{
-  background:rgba(249, 240, 197, .88);
-  backdrop-filter:blur(18px) saturate(140%);
-  -webkit-backdrop-filter:blur(18px) saturate(140%);
-  border-bottom-color:rgba(11,11,12,.10);
+  background:#F7EDB8;
+  border-bottom-color:rgba(11,11,12,.14);
 }
 .nav.up{ transform:translateY(-102%); }
 .nav__in{
@@ -274,6 +281,9 @@ input,textarea{ font:inherit; color:inherit; }
   --truck-h: calc(var(--truck-w) * 0.2573);
   /* Resting X as a fraction of the viewport — where the cab sits at rest. */
   --truck-rest: 0.38;
+  /* How much road is visible behind the tyre line. This is what gives the
+     surface somewhere to recede to; without it the truck stands on an edge. */
+  --road-far: 9%;
   background:
     /* Key light: the pool a softbox throws on the sweep behind the vehicle.
        Tight enough to have an edge — a wide, gentle one just reads as evenly
@@ -312,28 +322,44 @@ input,textarea{ font:inherit; color:inherit; }
     rgba(11,11,12,0) 0%, rgba(11,11,12,.035) 62%, rgba(11,11,12,.085) 100%);
 }
 
-/* The road: a strip of tarmac on the studio floor. Kept low-contrast on
-   purpose — it should read as asphalt catching studio light, not as a
-   photograph of a highway pasted under the truck. Faded at both ends so it
-   has no cut edge. */
+/* The road.
+
+   The first pass had this starting exactly at --ground, which is the tyre
+   contact line — so there was no ground plane *behind* the vehicle at all,
+   only white wall. That is what made the truck read as hovering above a strip
+   rather than standing on a surface: it was sitting on the road's far edge.
+
+   The band now begins --road-far above the contact line, so the surface runs
+   back behind the wheels and the truck sits within it. There is deliberately
+   no hard contact line any more either — a real photograph has a shadow where
+   the tyres meet the ground, not a drawn rule, and a full-width dark line at
+   that height reads as a horizon, which is the other half of the floating. */
 .stage__road{
   position:absolute; left:0; right:0; z-index:1; pointer-events:none;
-  top:var(--ground); height:calc(100% - var(--ground));
+  top:calc(var(--ground) - var(--road-far));
+  height:calc(100% - var(--ground) + var(--road-far));
+  /* Aerial perspective: the far edge dissolves into the sweep, the surface
+     gains density as it comes toward camera, then lifts slightly at the very
+     front where it catches the floor bounce. */
   background:linear-gradient(180deg,
-    rgba(26,26,30,.14) 0%, rgba(26,26,30,.105) 38%, rgba(26,26,30,.05) 100%);
+    rgba(26,26,30,0)    0%,
+    rgba(26,26,30,.045) 14%,
+    rgba(26,26,30,.085) 21%,
+    rgba(26,26,30,.125) 46%,
+    rgba(26,26,30,.135) 70%,
+    rgba(26,26,30,.08) 100%);
   -webkit-mask-image:linear-gradient(90deg, transparent 0%, #000 13%, #000 87%, transparent 100%);
   mask-image:linear-gradient(90deg, transparent 0%, #000 13%, #000 87%, transparent 100%);
 }
-/* Tyre contact edge, then the lane dashes further down the apron. */
+/* Lane dashes, well forward of the contact line so they read as markings lying
+   on the surface in front of the truck rather than as a rule under it. */
 .stage__road::after{
   content:''; position:absolute; inset:0;
-  background:
-    linear-gradient(180deg, rgba(11,11,12,.34) 0 1.5px, transparent 1.5px),
-    repeating-linear-gradient(90deg,
-      rgba(255,255,255,.55) 0 44px, rgba(255,255,255,0) 44px 104px);
-  background-repeat:no-repeat, repeat-x;
-  background-position:0 0, 0 44%;
-  background-size:100% 100%, 104px 2px;
+  background:repeating-linear-gradient(90deg,
+    rgba(255,255,255,.5) 0 44px, rgba(255,255,255,0) 44px 104px);
+  background-repeat:repeat-x;
+  background-position:0 62%;
+  background-size:104px 2px;
 }
 
 /* Studio vignette: corner falloff like a real lit set, over the side fades
@@ -358,9 +384,13 @@ input,textarea{ font:inherit; color:inherit; }
 .stage__truck{ position:absolute; inset:0; width:100%; height:100%; z-index:2; }
 /* Multiply is exactly right for a shadow — it darkens the paper beneath
    without tinting it. Masked at both ends so it reads as a pool, not a bar. */
+/* Tucked tighter under the axles than before and carrying more weight. With
+   the drawn contact line gone this is the only thing marrying the tyres to the
+   tarmac, so it has to do the work: dense right at the rubber, spreading and
+   softening as it runs toward camera. */
 .stage__shadow{
-  position:absolute; left:-3%; width:106%; top:100%; margin-top:-2.6%;
-  z-index:1; mix-blend-mode:multiply; opacity:.62;
+  position:absolute; left:-3%; width:106%; top:100%; margin-top:-1.6%;
+  z-index:1; mix-blend-mode:multiply; opacity:.78;
   -webkit-mask-image:linear-gradient(90deg, transparent 0%, #000 9%, #000 91%, transparent 100%);
   mask-image:linear-gradient(90deg, transparent 0%, #000 9%, #000 91%, transparent 100%);
 }
@@ -510,7 +540,13 @@ input,textarea{ font:inherit; color:inherit; }
    ══════════════════════════════════════════════════════════════════════════ */
 .net{ position:relative; height:400vh; background:var(--ink); }
 .net__stick{ position:sticky; top:0; height:100svh; overflow:hidden; }
-.net__canvas{ position:absolute; inset:0; width:100%; height:100%; }
+/* Grabbable. touch-action:pan-y keeps vertical scrolling with the page while
+   handing horizontal drags to the globe. */
+.net__canvas{
+  position:absolute; inset:0; width:100%; height:100%;
+  touch-action:pan-y; cursor:grab;
+}
+.net__canvas:active{ cursor:grabbing; }
 /* Keeps the copy legible over the dot field without hiding the map. */
 .net__scrim{
   position:absolute; inset:0; z-index:1; pointer-events:none;
@@ -561,6 +597,7 @@ input,textarea{ font:inherit; color:inherit; }
 .rail__intro{ flex:none; width:min(34vw,400px); align-self:center; }
 .rail__card{
   flex:none; width:min(74vw,520px); position:relative; overflow:hidden;
+  border-radius:var(--r-lg);
   background:var(--ink); color:var(--on-ink-1);
   padding:clamp(22px,2vw,32px); height:min(60vh,460px);
   display:flex; flex-direction:column; justify-content:space-between;
@@ -610,7 +647,7 @@ input,textarea{ font:inherit; color:inherit; }
 .svc__go{ font-family:var(--f-mono); font-size:10.5px; letter-spacing:.14em; color:var(--on-ink-3); transition:color .35s; }
 .svc__peek{
   position:fixed; top:0; left:0; width:clamp(180px,17vw,270px); aspect-ratio:4/3;
-  pointer-events:none; z-index:700; overflow:hidden; opacity:0;
+  pointer-events:none; z-index:700; overflow:hidden; opacity:0; border-radius:var(--r-md);
   transform:translate(-50%,-50%) scale(.88);
   transition:opacity .35s var(--e-out), transform .45s var(--e-out);
 }
@@ -720,7 +757,7 @@ input,textarea{ font:inherit; color:inherit; }
 .pap .trio__a{ color:var(--on-pap-2); }
 
 .gal{ display:grid; grid-template-columns:repeat(12,1fr); gap:clamp(8px,1vw,16px); margin-top:var(--gap-h); }
-.gal figure{ position:relative; overflow:hidden; background:var(--ink-3); }
+.gal figure{ position:relative; overflow:hidden; background:var(--ink-3); border-radius:var(--r-md); }
 .gal img{ width:100%; height:100%; object-fit:cover; transition:transform 1s var(--e-out); }
 .gal figure:hover img{ transform:scale(1.045); }
 .gal figcaption{
@@ -733,10 +770,10 @@ input,textarea{ font:inherit; color:inherit; }
 .g8{ grid-column:span 8; aspect-ratio:16/8; }
 
 .jrn{ display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(18px,2.2vw,32px); margin-top:var(--gap-h); }
-.jrn__m{ aspect-ratio:5/3.4; overflow:hidden; background:var(--ink-3); position:relative; }
+.jrn__m{ aspect-ratio:5/3.4; overflow:hidden; background:var(--ink-3); position:relative; border-radius:var(--r-md); }
 .jrn__m img{ width:100%; height:100%; object-fit:cover; transition:transform .8s var(--e-out); }
 .jrn__c:hover .jrn__m img{ transform:scale(1.05); }
-.jrn__cat{ position:absolute; top:12px; left:12px; background:var(--yellow); color:var(--ink); font-family:var(--f-mono); font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; padding:5px 9px; }
+.jrn__cat{ position:absolute; top:12px; left:12px; background:var(--yellow); color:var(--ink); font-family:var(--f-mono); font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; padding:5px 9px; border-radius:var(--r-sm); }
 .jrn__b{ padding-top:20px; }
 .jrn__dt{ font-family:var(--f-mono); font-size:10.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--on-ink-3); }
 .jrn__t{ margin-top:11px; }
@@ -767,7 +804,7 @@ input,textarea{ font:inherit; color:inherit; }
 .cinfo__v{ margin-top:8px; font-size:15.5px; }
 .cinfo__v a:hover{ color:var(--yellow); }
 
-.map{ margin-top:var(--gap-h); aspect-ratio:16/7; background:var(--ink-3); overflow:hidden; }
+.map{ margin-top:var(--gap-h); aspect-ratio:16/7; background:var(--ink-3); overflow:hidden; border-radius:var(--r-md); }
 .map iframe{ width:100%; height:100%; border:0; filter:grayscale(1) invert(.9) contrast(.85); }
 
 .split2{ display:grid; grid-template-columns:1fr 1fr; gap:clamp(26px,4.4vw,76px); }
