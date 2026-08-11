@@ -1,4 +1,3 @@
-import Stage from "@/components/home/Stage";
 import Beacon from "@/components/home/Beacon";
 import Reel from "@/components/home/Reel";
 import Network from "@/components/home/Network";
@@ -77,11 +76,10 @@ function TickItems() {
 export default function Home() {
   return (
     <>
-      {/* The globe is the hero. It ends on ink, and Stage opens on paper, so a
-          short ramp carries one into the other instead of cutting. */}
+      {/* The globe is the hero. It and the ticker are both ink, so they run
+          together; the ramp goes where the page actually changes ground, at
+          the paper section below. */}
       <Network />
-      <div className="blend blend--ink-paper" aria-hidden />
-      <Stage />
 
       <div className="tick" data-marquee="46">
         <div className="tick__t">
@@ -89,6 +87,8 @@ export default function Home() {
           <TickItems />
         </div>
       </div>
+
+      <div className="blend blend--ink-paper" aria-hidden />
 
       <section className="bay pap">
         <div className="wrap">
