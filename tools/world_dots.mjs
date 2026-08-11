@@ -22,9 +22,11 @@ const topo = JSON.parse(
 );
 const land = topojson.feature(topo, topo.objects.land);
 
-// Spacing in degrees at the equator. 1.6 gives a dense enough field to read as
-// coastline at hero scale without pushing the payload past a few tens of KB.
-const STEP = 1.6;
+// Spacing in degrees at the equator. The section dollies in to ~3x, and at
+// that range a 1.6 grid has thinned out into an anonymous dot pattern with no
+// coastline left in it — 0.85 keeps Africa legible at the closest framing.
+// One decimal place is well under the grid spacing and roughly halves the file.
+const STEP = 0.85;
 const LAT_LIMIT = 84;
 
 const dots = [];
@@ -34,7 +36,7 @@ for (let lat = -LAT_LIMIT; lat <= LAT_LIMIT; lat += STEP) {
   const lonStep = STEP / c;
   for (let lon = -180; lon < 180; lon += lonStep) {
     if (geoContains(land, [lon, lat])) {
-      dots.push([+lon.toFixed(2), +lat.toFixed(2)]);
+      dots.push([+lon.toFixed(1), +lat.toFixed(1)]);
     }
   }
 }

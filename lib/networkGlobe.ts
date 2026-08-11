@@ -38,7 +38,6 @@ const CITIES: Record<string, [number, number]> = {
   nairobi:    [36.82, -1.29],
   kigali:     [30.06, -1.94],
   goma:       [29.22, -1.68],
-  kampala:    [32.58, 0.35],
   lubumbashi: [27.48, -11.66],
 };
 
@@ -49,10 +48,15 @@ const LABELS: Record<string, [string, number, number]> = {
   kigali: ["Kigali", -1, -1],
   goma: ["Goma · DRC", -1, 1],
   lubumbashi: ["Lubumbashi", -1, 1],
-  kampala: ["Kampala", 1, -1],
 };
 
 const HUB = "kigali";
+
+/** Depth shading for the land dots, quantised so the draw loop never builds a
+    colour string. Index by z (0 at the limb, 1 facing camera). */
+const SHADES = Array.from({ length: 24 }, (_, i) =>
+  `rgba(237,216,54,${(0.30 + 0.5 * (i / 23)).toFixed(3)})`,
+);
 
 type Vec = [number, number, number];
 
@@ -121,13 +125,26 @@ export function createNetworkRenderer(canvas: HTMLCanvasElement) {
     "ui-monospace";
 
   /* The slice of canvas the globe may occupy — clear of the copy rather than
-     running underneath it, matching how the flat map behaved. */
+     running underneath it, matching how the flat map behaved.
+
+     Scroll drives a dolly-in rather than a reveal: the sphere grows from a bit
+     over its resting size to roughly three times it, so the section opens on a
+     whole planet and ends up close over the corridor. Zoom is applied about
+     the disc centre, and the camera already sits on the corridor, so the
+     destinations stay put in frame while everything else swells past the edge.
+     Eased so the move loads at the start and settles rather than tracking the
+     wheel linearly. */
   function globeBox() {
     const cw = canvas.width, ch = canvas.height;
+    // Smoothstep, not easeOut: the section has to open on a whole planet, so
+    // the move needs a gentle start. An easeOut front-loads it and the globe
+    // is already filling the frame before you have registered it as a globe.
+    const ease = progress * progress * (3 - 2 * progress);
+    const zoom = 1 + ease * 2.2;
     if (cw / dpr >= 1000) {
-      return { cx: cw * 0.68, cy: ch * 0.5, r: Math.min(cw * 0.40, ch * 0.56) };
+      return { cx: cw * 0.68, cy: ch * 0.5, r: Math.min(cw * 0.40, ch * 0.56) * zoom };
     }
-    return { cx: cw * 0.5, cy: ch * 0.58, r: Math.min(cw * 0.58, ch * 0.38) };
+    return { cx: cw * 0.5, cy: ch * 0.58, r: Math.min(cw * 0.58, ch * 0.38) * zoom };
   }
 
   function project(v: Vec, cx: number, cy: number, r: number) {
@@ -174,61 +191,59 @@ export function createNetworkRenderer(canvas: HTMLCanvasElement) {
     // ── Land ──────────────────────────────────────────────────────────────
     // Brighter toward the centre of the disc: the falloff toward the limb is
     // most of what sells the curvature.
+    /* 16k dots a frame, so the inner loop matters. Two things keep it cheap:
+       once the section dollies in, most of the sphere is off-canvas and gets
+       rejected on a bounds test before any drawing; and the depth shading is
+       quantised into SHADES precomputed fill strings, so there is no per-dot
+       template literal or toFixed allocation. */
     for (const v of land) {
       const p = project(v, cx, cy, r);
       if (p.z <= 0.02) continue;
-      ctx.fillStyle = `rgba(237,216,54,${(0.30 + 0.5 * p.z).toFixed(3)})`;
-      const s = Math.max(0.5, r * 0.0042 * p.z);
+      if (p.x < -4 || p.x > cw + 4 || p.y < -4 || p.y > ch + 4) continue;
+      ctx.fillStyle = SHADES[(p.z * (SHADES.length - 1)) | 0];
+      const s = clamp(r * 0.0042 * p.z, 0.5, 2.1 * dpr);
       ctx.beginPath();
       ctx.arc(p.x, p.y, s, 0, Math.PI * 2);
       ctx.fill();
     }
 
     // ── Arcs ──────────────────────────────────────────────────────────────
+    /* Markers and type are sized off dpr, not off r. They are annotations on
+       the scene, so they must hold their size on screen while the sphere
+       dollies in underneath them — scaling them with the globe would just
+       magnify the whole picture and gain nothing. */
+    const ui = dpr;
     const hub = cities[HUB];
     if (!hub) return;
-    const legSpan = 1 / LEGS.length;
 
-    LEGS.forEach((leg, L) => {
+    /* Every leg is drawn in full. The corridor is a fact about the business,
+       not a sequence to be unlocked — once you are at this section you should
+       see the whole network at once. */
+    const LIFT = 0.08;
+
+    for (const leg of LEGS) {
       const end = cities[leg.to];
-      if (!end) return;
-      // Each leg draws across its own slice of the scroll, with a little
-      // overlap so the sequence never fully stalls between spokes.
-      const t = clamp((progress - L * legSpan * 0.86) / legSpan, 0, 1);
-      if (t <= 0) return;
+      if (!end) continue;
 
       const STEPS = 64;
-      ctx.lineWidth = Math.max(1.2, r * 0.0075);
+      ctx.lineWidth = Math.max(1.2, 1.5 * ui);
       ctx.lineCap = "round";
       ctx.beginPath();
       let drawing = false;
       for (let i = 0; i <= STEPS; i++) {
-        const f = i / STEPS;
-        if (f > t) break;
-        const p3 = arcPoint(hub, end, f, 0.34);
+        const p3 = arcPoint(hub, end, i / STEPS, LIFT);
         const p = project(p3, cx, cy, r);
         // Cull where the arc passes behind the limb.
         if (p.z <= 0) { drawing = false; continue; }
         if (!drawing) { ctx.moveTo(p.x, p.y); drawing = true; }
         else ctx.lineTo(p.x, p.y);
       }
-      ctx.strokeStyle = "rgba(237,216,54,.72)";
+      ctx.strokeStyle = "rgba(237,216,54,.75)";
       ctx.stroke();
-
-      // Head of the arc, while it is still drawing.
-      if (t < 1) {
-        const p = project(arcPoint(hub, end, t, 0.34), cx, cy, r);
-        if (p.z > 0) {
-          ctx.fillStyle = "#EDD836";
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, r * 0.011, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-    });
+    }
 
     // ── Cities ────────────────────────────────────────────────────────────
-    ctx.font = `500 ${Math.round(r * 0.052)}px ${monoFamily()}`;
+    ctx.font = `500 ${Math.round(11.5 * ui)}px ${monoFamily()}`;
     ctx.textBaseline = "middle";
 
     for (const key in cities) {
@@ -236,42 +251,27 @@ export function createNetworkRenderer(canvas: HTMLCanvasElement) {
       if (p.z <= 0.04) continue;
 
       const isHub = key === HUB;
-      const reached =
-        isHub ||
-        LEGS.some((l, L) => l.to === key && progress > L * legSpan * 0.86 + legSpan * 0.55);
-
-      const rad = isHub ? r * 0.019 : r * 0.011;
       if (isHub) {
-        const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, r * 0.075);
+        const glow = 20 * ui;
+        const g = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glow);
         g.addColorStop(0, "rgba(237,216,54,.55)");
         g.addColorStop(1, "rgba(237,216,54,0)");
         ctx.fillStyle = g;
         ctx.beginPath();
-        ctx.arc(p.x, p.y, r * 0.075, 0, Math.PI * 2);
+        ctx.arc(p.x, p.y, glow, 0, Math.PI * 2);
         ctx.fill();
       }
-      ctx.fillStyle = reached ? "#EDD836" : "rgba(237,216,54,.34)";
+      ctx.fillStyle = "#EDD836";
       ctx.beginPath();
-      ctx.arc(p.x, p.y, rad, 0, Math.PI * 2);
+      ctx.arc(p.x, p.y, (isHub ? 5 : 3.2) * ui, 0, Math.PI * 2);
       ctx.fill();
 
-      /* Only the hub and the leg currently drawing get a name. These cities
-         sit within a few degrees of each other, so at globe scale six labels
-         at once is an unreadable pile — the scroll is already stepping through
-         them one at a time, so let the labels follow it. */
-      const activeLeg = clamp(Math.floor(progress / legSpan), 0, LEGS.length - 1);
       const label = LABELS[key];
-      if (!label || !reached) continue;
-      if (!isHub && LEGS[activeLeg]?.to !== key) continue;
-
+      if (!label) continue;
       const [text, side, vNudge] = label;
       ctx.textAlign = side > 0 ? "left" : "right";
-      ctx.fillStyle = isHub ? "rgba(244,241,232,.92)" : "rgba(244,241,232,.7)";
-      ctx.fillText(
-        text,
-        p.x + side * r * 0.035,
-        p.y + vNudge * r * 0.05,
-      );
+      ctx.fillStyle = isHub ? "rgba(244,241,232,.95)" : "rgba(244,241,232,.72)";
+      ctx.fillText(text, p.x + side * 11 * ui, p.y + vNudge * 13 * ui);
     }
   }
 
