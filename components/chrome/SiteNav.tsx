@@ -53,8 +53,14 @@ export default function SiteNav() {
     <>
       <header className={navClass} id="nav" ref={navRef}>
         <div className="nav__in">
+          {/* Both marks ship and cross-fade in CSS off the same .solid class
+              that drives the bar itself, so the swap is always in step with
+              the background and there is no second source of truth. Doing it
+              in JS would also mean the light mark is only fetched at the
+              moment it is needed, which is a visible pop. */}
           <Link href="/" className="nav__logo" aria-label="Martin Logistics — home">
-            <img src="/assets/img/logo.png" alt="Martin Logistics" />
+            <img className="nav__mark nav__mark--dark" src="/assets/img/logo.png" alt="Martin Logistics" />
+            <img className="nav__mark nav__mark--light" src="/assets/img/logo-light.png" alt="" aria-hidden />
           </Link>
 
           <nav className="nav__links">

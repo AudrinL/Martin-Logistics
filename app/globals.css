@@ -207,7 +207,19 @@ input,textarea{ font:inherit; color:inherit; }
   width:100%; max-width:var(--maxw); margin-inline:auto; padding-inline:var(--pad);
   display:flex; align-items:center; justify-content:space-between; gap:26px;
 }
-.nav__logo img{ height:56px; width:auto; }
+/* Two marks stacked in the same box. The dark one keeps the box sized in
+   normal flow; the light one is taken out of flow on top of it, so the bar
+   never changes height mid-fade. */
+.nav__logo{ position:relative; display:block; }
+.nav__mark{ height:56px; width:auto; transition:opacity .35s linear; }
+.nav__mark--light{ position:absolute; inset:0; }
+/* Transparent bar means the near-black globe hero is behind it — light mark.
+   The bar fills in on scroll and on every interior page, and the dark mark
+   comes back. Same .solid class, same .35s, so they move together. */
+.nav__mark--dark{ opacity:0; }
+.nav__mark--light{ opacity:1; }
+.nav.solid .nav__mark--dark{ opacity:1; }
+.nav.solid .nav__mark--light{ opacity:0; }
 .nav__links{ display:flex; align-items:center; gap:32px; }
 /* Everything in the bar is ink now. It reads on the yellow when solid and on
    the white studio sweep at rest — the old light-on-paper set was invisible
