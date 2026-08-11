@@ -125,9 +125,9 @@ export function createNetworkRenderer(canvas: HTMLCanvasElement) {
   function globeBox() {
     const cw = canvas.width, ch = canvas.height;
     if (cw / dpr >= 1000) {
-      return { cx: cw * 0.70, cy: ch * 0.5, r: Math.min(cw * 0.34, ch * 0.46) };
+      return { cx: cw * 0.68, cy: ch * 0.5, r: Math.min(cw * 0.40, ch * 0.56) };
     }
-    return { cx: cw * 0.5, cy: ch * 0.60, r: Math.min(cw * 0.46, ch * 0.30) };
+    return { cx: cw * 0.5, cy: ch * 0.58, r: Math.min(cw * 0.58, ch * 0.38) };
   }
 
   function project(v: Vec, cx: number, cy: number, r: number) {
