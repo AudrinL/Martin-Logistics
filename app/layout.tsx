@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { MuseoModerno, Inter_Tight, JetBrains_Mono } from "next/font/google";
+import { ABeeZee, Inter_Tight, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
 import SiteNav from "@/components/chrome/SiteNav";
@@ -11,10 +11,12 @@ import Micro from "@/components/fx/Micro";
 /* Self-hosted, so there is no render-blocking round trip to Google and no
    flash of fallback type. The variables are consumed by --f-head/--f-text/
    --f-mono in globals.css. */
-const head = MuseoModerno({
+/* ABeeZee ships a single weight (400) and no bold cut, so the heading
+   weights in globals.css have nothing heavier to resolve to. */
+const head = ABeeZee({
   variable: "--font-head",
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["400"],
   display: "swap",
 });
 

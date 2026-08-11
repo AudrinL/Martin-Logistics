@@ -1,4 +1,6 @@
+import GlassHero from "@/components/home/GlassHero";
 import Stage from "@/components/home/Stage";
+import Beacon from "@/components/home/Beacon";
 import Reel from "@/components/home/Reel";
 import Network from "@/components/home/Network";
 import Rail from "@/components/home/Rail";
@@ -76,6 +78,7 @@ function TickItems() {
 export default function Home() {
   return (
     <>
+      <GlassHero />
       <Stage />
 
       <div className="tick" data-marquee="46">
@@ -107,6 +110,7 @@ export default function Home() {
       <Reel />
       <Network />
       <Rail />
+      <Beacon />
       <Services />
 
       <section className="bay--s ink">

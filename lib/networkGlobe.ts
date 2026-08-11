@@ -158,6 +158,12 @@ export function createNetworkRenderer(canvas: HTMLCanvasElement) {
     if (!data) return;
 
     const { cx, cy, r } = globeBox();
+    /* Before the canvas has been laid out its backing store is 0, which makes
+       r zero and the rim stroke below ask for a radius of -0.5 — canvas throws
+       IndexSizeError on that. Worth guarding rather than clamping: there is
+       genuinely nothing to draw at this size, and the throw escaped into the
+       GSAP ticker and took other subscribers' callbacks down with it. */
+    if (!(r > 1)) return;
 
     // ── Atmosphere ────────────────────────────────────────────────────────
     const halo = ctx.createRadialGradient(cx, cy, r * 0.92, cx, cy, r * 1.22);

@@ -171,13 +171,13 @@ export default function Stage() {
             <div className="stage__kick">
               Martin Hardware Ltd — Logistics &amp; Transport
             </div>
-            <h1 className="stage__h">
+            <h2 className="stage__h">
               <span>Every tonne we carry</span>
               <br />
               <em>
                 <span>moves Rwanda.</span>
               </em>
-            </h1>
+            </h2>
           </div>
 
           <div className="stage__caps" id="caps">

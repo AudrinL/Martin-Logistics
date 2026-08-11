@@ -4,13 +4,36 @@
 
    Palette is deliberately three colours: ink, paper, yellow. Red exists
    only inside the logo artwork itself and is never used as a UI colour.
-   Type is MuseoModerno for headings, held at restrained sizes — scale is
+   Type is Moon for headings, held at restrained sizes — scale is
    used where it earns the composition, not everywhere.
    ========================================================================== */
 
 /* Fonts are self-hosted by next/font in app/layout.tsx, which exposes them as
    --font-head / --font-text / --font-mono. No render-blocking request to
    Google, and they are guaranteed loaded before the canvas pieces measure. */
+
+/* Headings are Moon, self-hosted from public/fonts/moon/ — see the README in
+   that folder for the exact filenames. Moon ships two weights only, Light and
+   Bold, so the ranges below claim the whole scale between them: anything the
+   type asks for at 500+ resolves to Bold rather than being synthesised into a
+   fake bold. If the files are absent the @font-face simply never resolves and
+   --f-head falls through to MuseoModerno, so the page never renders unstyled. */
+@font-face{
+  font-family:"Moon";
+  src:url("/fonts/moon/Moon-Light.woff2") format("woff2"),
+      url("/fonts/moon/Moon-Light.otf")   format("opentype");
+  font-weight:100 400;
+  font-style:normal;
+  font-display:swap;
+}
+@font-face{
+  font-family:"Moon";
+  src:url("/fonts/moon/Moon-Bold.woff2") format("woff2"),
+      url("/fonts/moon/Moon-Bold.otf")   format("opentype");
+  font-weight:500 900;
+  font-style:normal;
+  font-display:swap;
+}
 
 :root{
   --yellow:      #EDD836;
@@ -32,7 +55,7 @@
   --on-pap-3: rgba(11,11,12,.32);
   --rule-pap: rgba(11,11,12,.12);
 
-  --f-head: var(--font-head), system-ui, sans-serif;
+  --f-head: "Moon", var(--font-head), system-ui, sans-serif;
   --f-text: var(--font-text), -apple-system, BlinkMacSystemFont, sans-serif;
   --f-mono: var(--font-mono), ui-monospace, Consolas, monospace;
 
@@ -174,12 +197,9 @@ input,textarea{ font:inherit; color:inherit; }
   display:flex; align-items:center; border-bottom:1px solid transparent;
   transition:transform .5s var(--e-out), background-color .35s linear, border-color .35s linear;
 }
-/* The Martin Hardware bar: a soft wash of the house yellow, not ink. Kept well
-   off full --yellow saturation — at nav scale the pure brand colour behind
-   small mono type is a headache, and this has to sit under the logo without
-   competing with the red in it. */
+/* The Martin Hardware bar, at full saturation. */
 .nav.solid{
-  background:#F7EDB8;
+  background:#f2e82a;
   border-bottom-color:rgba(11,11,12,.14);
 }
 .nav.up{ transform:translateY(-102%); }
@@ -714,7 +734,41 @@ input,textarea{ font:inherit; color:inherit; }
 .ft__l a:hover{ color:var(--yellow); }
 .ft__c li{ margin-bottom:14px; line-height:1.6; }
 .ft__c a:hover{ color:var(--yellow); }
+/* The fitted wordmark. Sizing is set inline by FootMark from a real
+   measurement; everything here is the part that does not depend on width.
+   line-height is well under 1 because the mark is set solid — at this scale
+   normal leading opens a gap you can park a truck in. */
+.ftmark{
+  position:relative;
+  padding-top:clamp(40px,6vh,76px);
+  overflow:hidden;
+  user-select:none;
+  /* Column, so the inline-block lines stack instead of flowing side by side,
+     and flex-start so each keeps its own measured width. */
+  display:flex; flex-direction:column; align-items:flex-start;
+}
+/* Carries the line styles for measurement only. Not display:none — that would
+   stop it computing a usable font. */
+.ftmark__probe{
+  position:absolute; visibility:hidden; height:0; pointer-events:none;
+}
+.ftmark__l{
+  /* inline-block, not block: the box then reports the width of the text it
+     contains, so a mis-fit is visible instead of being hidden by a full-width
+     block that always matches its container. */
+  display:inline-block;
+  font-family:var(--f-head); font-weight:600;
+  letter-spacing:-.022em; line-height:.82;
+  white-space:nowrap;
+  /* Dissolves into the bottom of the page rather than sitting on it. */
+  background:linear-gradient(180deg, rgba(244,241,232,.30), rgba(244,241,232,.05));
+  -webkit-background-clip:text; background-clip:text;
+  color:transparent;
+}
+.ftmark__l--est{ font-size:8.6vw; }
+
 .ft__bot{
+  border-top:1px solid var(--rule-ink); margin-top:clamp(28px,4vh,48px);
   display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap;
   padding-block:24px; font-family:var(--f-mono); font-size:10.5px; color:var(--on-ink-3);
 }
@@ -882,4 +936,359 @@ input,textarea{ font:inherit; color:inherit; }
   .rail__track{ flex-direction:column; align-items:stretch; transform:none !important; padding-block:var(--bay); }
   .rail__card,.rail__intro{ width:auto; height:auto; min-height:340px; }
   .fade,.rise{ opacity:1 !important; transform:none !important; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   BEACON — the night-run hero.
+
+   A black plate lit by one soft circular beam. The corridor photograph and the
+   solid cut of the headline are masked by that same beam, so both are found
+   rather than shown. Everything below reads --bx/--by/--br off .bcn__stage,
+   which the component drives on the GSAP ticker.
+
+   The two headings are stacked in a grid cell rather than positioned: the lit
+   copy has to land on the outlined copy to the pixel at every viewport width,
+   and matching two absolutely-positioned blocks across a clamp() type scale is
+   a losing game.
+   ══════════════════════════════════════════════════════════════════════════ */
+.bcn{ position:relative; background:var(--ink); }
+.bcn__stage{
+  position:relative; overflow:hidden; isolation:isolate;
+  min-height:min(104svh, 940px);
+  display:flex; align-items:center;
+  /* Beam. Defaults place it centre-ish so the section is never a black box
+     if JS has not run yet. */
+  --bx:50%; --by:46%; --br:24vmin;
+  --beam:radial-gradient(circle var(--br) at var(--bx) var(--by),
+    #000 0%, #000 42%, rgba(0,0,0,.72) 66%, rgba(0,0,0,.24) 86%, transparent 100%);
+}
+
+/* ── The plate ──────────────────────────────────────────────────────────── */
+.bcn__plate{ position:absolute; inset:-9% 0; z-index:0; will-change:transform; }
+.bcn__photo{
+  position:absolute; inset:0;
+  background:url('/assets/img/hero-highway-03.webp') center/cover no-repeat;
+  -webkit-mask-image:var(--beam); mask-image:var(--beam);
+  /* Graded down hard: at full strength the sunset fights the yellow and the
+     type stops being the subject. This is a night scene the lamp finds, not a
+     photograph with a hole cut in it. */
+  filter:saturate(.55) brightness(.4) contrast(1.2);
+}
+/* Warm bloom in the middle of the beam, so the light has a source temperature
+   instead of just being an aperture. */
+.bcn__stage::after{
+  content:''; position:absolute; inset:0; z-index:1; pointer-events:none;
+  background:radial-gradient(circle calc(var(--br) * .82) at var(--bx) var(--by),
+    rgba(237,216,54,.16) 0%, rgba(237,216,54,.05) 45%, transparent 78%);
+  mix-blend-mode:screen;
+}
+/* Horizon rule — the one piece of structure that survives outside the beam,
+   so the plate still has an axis when the lamp is elsewhere. */
+.bcn__rule{
+  position:absolute; left:0; right:0; top:50%; height:1px; z-index:1;
+  background:linear-gradient(90deg, transparent, rgba(244,241,232,.16) 22%, rgba(244,241,232,.16) 78%, transparent);
+}
+.bcn__grain{
+  position:absolute; inset:0; z-index:2; pointer-events:none; opacity:.4;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='.42'/%3E%3C/svg%3E");
+}
+
+/* ── Type ───────────────────────────────────────────────────────────────── */
+.bcn__in{
+  position:relative; z-index:3;
+  width:100%; max-width:var(--maxw); margin-inline:auto; padding-inline:var(--pad);
+}
+.bcn__kick{
+  display:flex; align-items:center; gap:13px;
+  font-family:var(--f-mono); font-size:10.5px; letter-spacing:.22em;
+  text-transform:uppercase; color:var(--on-ink-3);
+}
+.bcn__kick i{ width:34px; height:1px; background:var(--yellow); flex:none; }
+
+.bcn__heads{ display:grid; margin-top:clamp(20px,3vh,34px); }
+.bcn__heads > *{ grid-area:1 / 1; }
+.bcn__h{
+  margin:0; font-family:var(--f-head); font-weight:600;
+  font-size:clamp(40px, 8.2vw, 132px); line-height:.94; letter-spacing:-.038em;
+}
+.bcn__line{ display:block; overflow:hidden; }
+.bcn__line i{ display:block; font-style:normal; }
+
+/* Outline ghost — always present, so the beam has something to resolve. */
+.bcn__h:not(.bcn__h--lit) i{
+  color:transparent;
+  -webkit-text-stroke:1px rgba(244,241,232,.17);
+}
+/* The lit cut, clipped to the beam.
+
+   The mask goes on this element, not on the lines inside it, and it uses its
+   own offset-corrected copy of the gradient. A mask resolves its position
+   against the box it is applied to, so the stage-space --bx/--by mean nothing
+   on a text run a few hundred pixels down the page — the beam would sit at the
+   same spot inside every line. --ox/--oy are this element's offset within the
+   stage, written by the component, which puts the gradient back into stage
+   space where the photograph's beam already lives. */
+.bcn__h--lit{
+  pointer-events:none;
+  --ox:0px; --oy:0px;
+  -webkit-mask-image:radial-gradient(circle var(--br)
+    at calc(var(--bx) - var(--ox)) calc(var(--by) - var(--oy)),
+    #000 0%, #000 42%, rgba(0,0,0,.72) 66%, rgba(0,0,0,.24) 86%, transparent 100%);
+  mask-image:radial-gradient(circle var(--br)
+    at calc(var(--bx) - var(--ox)) calc(var(--by) - var(--oy)),
+    #000 0%, #000 42%, rgba(0,0,0,.72) 66%, rgba(0,0,0,.24) 86%, transparent 100%);
+}
+.bcn__h--lit i{
+  color:#FFFDF4;
+  /* A touch of spill, so lit letters look lit rather than just filled. */
+  text-shadow:0 0 26px rgba(237,216,54,.28);
+}
+
+.bcn__sub{
+  margin-top:clamp(20px,3vh,32px); max-width:46ch;
+  font-size:clamp(14px,1.05vw,16.5px); line-height:1.72; color:var(--on-ink-2);
+}
+.bcn__acts{ margin-top:clamp(26px,4vh,44px); display:flex; gap:14px; flex-wrap:wrap; }
+.bcn__acts .btn--fill{ will-change:transform; }
+
+/* ── Corner metadata ────────────────────────────────────────────────────── */
+.bcn__meta{
+  position:absolute; z-index:3; left:var(--pad); right:var(--pad); bottom:clamp(20px,3.4vh,38px);
+  display:flex; justify-content:space-between; gap:18px;
+  font-family:var(--f-mono); font-size:10px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--on-ink-3);
+}
+/* Tabular figures stop the seconds shuffling the line width every tick. */
+.bcn__clock{ font-variant-numeric:tabular-nums; }
+
+@media (max-width:760px){
+  .bcn__stage{ min-height:92svh; --br:30vmin; }
+  .bcn__meta{ flex-direction:column; gap:6px; }
+  .bcn__acts .btn{ flex:1; justify-content:center; }
+}
+@media (prefers-reduced-motion: reduce){
+  .bcn__plate{ inset:0; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   GLASS HERO — the primary hero.
+
+   Real glass, not painted glass: every panel is a backdrop-filter over a live
+   aurora, with an inset top highlight and a specular that tracks the pointer
+   across its own surface. The three tells that separate this from a white
+   panel at 20% opacity are (1) saturate() in the backdrop filter, which makes
+   colour bloom through rather than wash out, (2) an asymmetric border — bright
+   on the lit edge, near-invisible on the shaded one, and (3) the specular
+   moving independently of the panel underneath it.
+   ══════════════════════════════════════════════════════════════════════════ */
+.gh{
+  position:relative; isolation:isolate; overflow:hidden;
+  min-height:100svh; display:flex; align-items:center;
+  padding-block:calc(var(--nav-h) + clamp(40px,7vh,90px)) clamp(70px,11vh,130px);
+  /* Warm, luminous, and light — the nav sits transparent over this with ink
+     type, so this section owns the legibility of the header on screen one. */
+  background:
+    radial-gradient(120% 90% at 50% -10%, #FFFDF6 0%, rgba(255,253,246,0) 60%),
+    linear-gradient(168deg, #FBF8EE 0%, #F4F1E8 44%, #EDE7D6 100%);
+}
+
+/* ── Aurora ─────────────────────────────────────────────────────────────── */
+.gh__aurora{ position:absolute; inset:-12%; z-index:0; pointer-events:none; will-change:transform; }
+.gh__blob{
+  position:absolute; display:block; border-radius:50%;
+  filter:blur(66px); opacity:.9; mix-blend-mode:multiply;
+  /* Transform-only keyframes: animating filter or background would repaint a
+     blurred surface every frame, which is the expensive half of this effect. */
+  animation:gh-drift 26s var(--e-io) infinite alternate;
+}
+.gh__blob--a{
+  width:46vw; height:46vw; left:-6%; top:2%;
+  background:radial-gradient(circle at 34% 34%, rgba(237,216,54,.62), rgba(237,216,54,0) 68%);
+  animation-duration:24s;
+}
+.gh__blob--b{
+  width:40vw; height:40vw; right:-4%; top:-6%;
+  background:radial-gradient(circle at 60% 40%, rgba(255,214,140,.55), rgba(255,214,140,0) 66%);
+  animation-duration:31s; animation-direction:alternate-reverse;
+}
+.gh__blob--c{
+  width:52vw; height:52vw; right:4%; bottom:-22%;
+  background:radial-gradient(circle at 44% 56%, rgba(168,196,214,.5), rgba(168,196,214,0) 68%);
+  animation-duration:28s; animation-delay:-6s;
+}
+.gh__blob--d{
+  width:34vw; height:34vw; left:18%; bottom:-14%;
+  background:radial-gradient(circle at 50% 50%, rgba(226,208,178,.62), rgba(226,208,178,0) 70%);
+  animation-duration:35s; animation-direction:alternate-reverse; animation-delay:-11s;
+}
+@keyframes gh-drift{
+  from{ transform:translate3d(0,0,0) scale(1); }
+  to  { transform:translate3d(4%, -5%, 0) scale(1.16); }
+}
+/* A fine grid, so the blur has structure to distort instead of pure haze. */
+.gh__mesh{
+  position:absolute; inset:0; z-index:1; pointer-events:none; opacity:.5;
+  background-image:
+    linear-gradient(rgba(11,11,12,.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(11,11,12,.045) 1px, transparent 1px);
+  background-size:66px 66px;
+  -webkit-mask-image:radial-gradient(78% 66% at 50% 44%, #000 30%, transparent 100%);
+  mask-image:radial-gradient(78% 66% at 50% 44%, #000 30%, transparent 100%);
+}
+
+/* ── The glass material ─────────────────────────────────────────────────── */
+.gh__glass{
+  position:relative; isolation:isolate;
+  --mx:50%; --my:0%;
+  background:linear-gradient(150deg, rgba(255,255,255,.62), rgba(255,255,255,.24));
+  backdrop-filter:blur(26px) saturate(185%);
+  -webkit-backdrop-filter:blur(26px) saturate(185%);
+  border:1px solid rgba(255,255,255,.5);
+  /* Lit from above: bright inset on the top edge, a whisper on the bottom,
+     and a long soft drop so the panel floats rather than sits. */
+  box-shadow:
+    0 34px 80px -28px rgba(11,11,12,.32),
+    0 8px 24px -14px rgba(11,11,12,.18),
+    inset 0 1px 0 rgba(255,255,255,.95),
+    inset 0 -1px 0 rgba(255,255,255,.28);
+}
+/* Specular — follows the pointer across the surface of this panel. */
+.gh__glass::before{
+  content:''; position:absolute; inset:0; z-index:0; border-radius:inherit;
+  pointer-events:none;
+  background:radial-gradient(42% 58% at var(--mx) var(--my),
+    rgba(255,255,255,.85) 0%, rgba(255,255,255,.22) 42%, transparent 72%);
+  opacity:.9; transition:opacity .5s var(--e-out);
+}
+/* Refraction edge: a thin chromatic lip on the top-left, where the light is. */
+.gh__glass::after{
+  content:''; position:absolute; inset:0; z-index:0; border-radius:inherit;
+  pointer-events:none; padding:1px;
+  background:linear-gradient(140deg,
+    rgba(255,255,255,.95) 0%, rgba(237,216,54,.5) 26%,
+    rgba(255,255,255,0) 52%, rgba(168,196,214,.42) 82%, rgba(255,255,255,.6) 100%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask:linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor; mask-composite:exclude;
+}
+.gh__glass > *{ position:relative; z-index:1; }
+
+/* Browsers without backdrop-filter get an opaque panel rather than a
+   transparent one — unreadable type is a worse failure than no blur. */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .gh__glass{ background:rgba(255,255,255,.9); }
+}
+
+/* ── Layout ─────────────────────────────────────────────────────────────── */
+.gh__in{
+  position:relative; z-index:2;
+  width:100%; max-width:var(--maxw); margin-inline:auto; padding-inline:var(--pad);
+  display:grid; grid-template-columns:minmax(0,1.35fr) minmax(0,.65fr);
+  gap:clamp(20px,2.6vw,46px); align-items:center;
+}
+.gh__slab{
+  border-radius:clamp(20px, 2vw, 34px);
+  padding:clamp(28px, 3.4vw, 60px);
+  will-change:transform;
+}
+
+.gh__eyebrow{
+  display:flex; align-items:center; gap:11px;
+  font-family:var(--f-mono); font-size:10.5px; letter-spacing:.2em;
+  text-transform:uppercase; color:var(--on-pap-2);
+}
+.gh__dot{
+  width:7px; height:7px; border-radius:50%; background:var(--yellow); flex:none;
+  box-shadow:0 0 0 4px rgba(237,216,54,.22);
+  animation:gh-pulse 2.6s var(--e-io) infinite;
+}
+@keyframes gh-pulse{
+  0%,100%{ box-shadow:0 0 0 4px rgba(237,216,54,.22); }
+  50%    { box-shadow:0 0 0 9px rgba(237,216,54,0); }
+}
+
+.gh__h{
+  margin-top:clamp(18px,2.4vh,30px);
+  font-family:var(--f-head); font-weight:600; color:var(--on-pap-1);
+  font-size:clamp(31px, 4.4vw, 70px); line-height:1.02; letter-spacing:-.032em;
+}
+.gh__mask{ display:block; overflow:hidden; padding-block:.06em; }
+.gh__word{ display:block; }
+.gh__h em{
+  font-style:normal;
+  background:linear-gradient(96deg, #C9A800 0%, #EDD836 38%, #8FA9BA 100%);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+}
+
+.gh__sub{
+  margin-top:clamp(16px,2.2vh,26px); max-width:52ch;
+  font-size:clamp(14px,1.02vw,16.5px); line-height:1.7; color:var(--on-pap-2);
+}
+.gh__acts{ margin-top:clamp(22px,3.4vh,38px); display:flex; gap:12px; flex-wrap:wrap; }
+
+/* Glass button — same material, pill geometry, so it belongs to the slab. */
+.gh__ghost{
+  display:inline-flex; align-items:center; gap:12px;
+  padding:15px 26px; border-radius:999px; overflow:hidden;
+  font-family:var(--f-mono); font-size:11.5px; letter-spacing:.12em;
+  text-transform:uppercase; white-space:nowrap; color:var(--on-pap-1);
+  transition:transform .45s var(--e-out);
+}
+.gh__ghost:hover{ transform:translateY(-2px); }
+.gh__ghost svg{ width:13px; height:13px; flex:none; transition:transform .45s var(--e-out); }
+.gh__ghost:hover svg{ transform:translate(3px,-3px); }
+
+/* ── Floating stat chips ────────────────────────────────────────────────── */
+.gh__chips{ display:flex; flex-direction:column; gap:clamp(12px,1.6vw,20px); }
+.gh__chip{
+  border-radius:clamp(16px,1.4vw,22px);
+  padding:clamp(16px,1.5vw,24px) clamp(18px,1.7vw,28px);
+  will-change:transform;
+  animation:gh-float 9s var(--e-io) infinite alternate;
+}
+.gh__chip:nth-child(2){ animation-duration:11s; animation-delay:-3s; margin-left:clamp(0px,3vw,42px); }
+.gh__chip:nth-child(3){ animation-duration:13s; animation-delay:-6s; }
+/* translate, not transform — GSAP owns transform on these for the parallax,
+   and a keyframe on the same property would fight it every frame. */
+@keyframes gh-float{ from{ translate:0 0; } to{ translate:0 -12px; } }
+
+.gh__chip b{
+  display:flex; align-items:baseline; gap:7px;
+  font-family:var(--f-head); font-weight:600; letter-spacing:-.028em;
+  font-size:clamp(26px,2.5vw,40px); color:var(--on-pap-1);
+}
+.gh__chip b i{
+  font-style:normal; font-family:var(--f-mono); font-weight:400;
+  font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--on-pap-3);
+}
+.gh__chip span{
+  display:block; margin-top:5px;
+  font-family:var(--f-mono); font-size:10px; letter-spacing:.15em;
+  text-transform:uppercase; color:var(--on-pap-2);
+}
+
+/* ── Scroll cue ─────────────────────────────────────────────────────────── */
+.gh__cue{
+  position:absolute; left:50%; translate:-50% 0; bottom:clamp(20px,3.4vh,40px); z-index:2;
+  display:flex; flex-direction:column; align-items:center; gap:10px;
+  font-family:var(--f-mono); font-size:9.5px; letter-spacing:.24em;
+  text-transform:uppercase; color:var(--on-pap-3);
+}
+.gh__cue i{ width:1px; height:42px; background:linear-gradient(var(--on-pap-3), transparent); }
+
+@media (max-width:1080px){
+  .gh__in{ grid-template-columns:1fr; }
+  .gh__chips{ flex-direction:row; flex-wrap:wrap; }
+  .gh__chip{ flex:1 1 min(100%,190px); }
+  .gh__chip:nth-child(2){ margin-left:0; }
+}
+@media (max-width:760px){
+  .gh{ min-height:auto; }
+  .gh__cue{ display:none; }
+  .gh__acts .btn, .gh__ghost{ flex:1; justify-content:center; }
+  /* Heavy blur over a large area is the main cost on phones. */
+  .gh__glass{ backdrop-filter:blur(16px) saturate(160%); -webkit-backdrop-filter:blur(16px) saturate(160%); }
+}
+@media (prefers-reduced-motion: reduce){
+  .gh__blob, .gh__chip, .gh__dot{ animation:none; }
 }

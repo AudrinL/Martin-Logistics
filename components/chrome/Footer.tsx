@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { NAV, CONTACT, SERVICES, tel } from "@/lib/site";
+import FootMark from "./FootMark";
 
 /* Server component — the year is stamped at render, so there is no client
    JS and nothing to hydrate for it. */
@@ -68,6 +69,8 @@ export default function Footer() {
             </ul>
           </div>
         </div>
+
+        <FootMark />
 
         <div className="ft__bot">
           <span>
