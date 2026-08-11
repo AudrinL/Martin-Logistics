@@ -34,8 +34,12 @@ const INK = 90;
 const DOT = 1.6;          /* particle size in CSS px */
 const EASE = 0.075;       /* pull toward target */
 const FRICTION = 0.86;
-const PUSH_R = 120;       /* cursor repel radius, CSS px */
-const PUSH_F = 34;
+/* Cursor repel radius in CSS px — this is the visible empty circle the
+   pointer carves out of the cloud, so it reads as twice this number wide.
+   Kept tight: a wide void erases whole letters and the mark stops being
+   readable while the cursor is anywhere near it. */
+const PUSH_R = 62;
+const PUSH_F = 26;
 const DRIFT = 0.22;       /* idle wander */
 
 type P = {
