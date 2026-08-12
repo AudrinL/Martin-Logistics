@@ -703,9 +703,13 @@ input,textarea{ font:inherit; color:inherit; }
 .abt__tl{
   margin:clamp(34px,5vh,64px) 0 0; padding:0; list-style:none;
 }
+/* Three columns: year, marker, copy. The marker is a real column rather than a
+   pseudo-element on the copy, so the line stretches to the row's full height
+   for free — and at phone widths it only has to change its `left`, not its
+   whole geometry. */
 .abt__s{
-  display:grid; grid-template-columns:clamp(88px,10vw,164px) minmax(0,1fr);
-  gap:clamp(16px,3vw,52px);
+  display:grid; grid-template-columns:clamp(88px,10vw,164px) 1px minmax(0,1fr);
+  gap:0 clamp(16px,2.6vw,40px);
 }
 /* Years are the argument, so they sit at heading weight rather than as a mono
    caption. Tabular figures keep the column aligned on its digits — "2012" and
@@ -716,39 +720,41 @@ input,textarea{ font:inherit; color:inherit; }
   padding-top:2px;
 }
 
-/* The spine and its dot are drawn on the content column so the line runs
-   between the entries rather than around them. */
-.abt__sc{
-  position:relative;
-  padding-left:clamp(24px,2.4vw,42px);
-  padding-bottom:clamp(30px,4.4vh,58px);
-}
-.abt__sc::before{
-  content:''; position:absolute; left:0; top:11px; bottom:0; width:1px;
-  background:var(--rule-ink);
-}
-.abt__sc::after{
+/* Marker column. Grey at rest and readable with no JS — the yellow is added
+   by scroll, never required to see the content. */
+.abt__sm{ position:relative; width:1px; background:var(--rule-ink); }
+/* The dot. Sits on the line, dim until its beat arrives. */
+.abt__sm::after{
   content:''; position:absolute; left:-4px; top:6px; width:9px; height:9px;
-  border-radius:50%; background:var(--yellow);
-  transition:transform .45s var(--e-out);
+  border-radius:50%; background:var(--on-ink-3);
+  transition:background-color .45s var(--e-out), transform .45s var(--e-out);
+}
+/* The fill. Scrubbed 0 → 1 across the row's own scroll window, so the legs
+   join end to end and read as one line drawing itself down the section. */
+.abt__sf{
+  position:absolute; inset:0; background:var(--yellow);
+  transform:scaleY(0); transform-origin:50% 0;
 }
 /* A line that stops dead under the last dot reads as a truncated list, so the
-   final leg fades instead — and it has no entry beneath it to space away from. */
-.abt__s:last-child .abt__sc{ padding-bottom:0; }
-.abt__s:last-child .abt__sc::before{
-  bottom:auto; height:clamp(40px,6vh,80px);
-  background:linear-gradient(var(--rule-ink), transparent);
+   final leg fades out — and the fill fades with it. */
+.abt__s:last-child .abt__sm{ background:linear-gradient(var(--rule-ink), transparent); }
+.abt__s:last-child .abt__sf{
+  background:linear-gradient(var(--yellow), transparent);
 }
-/* One moving part per row: the dot swells, the body copy comes up to full
-   strength. No card to lift, so the row itself stays put. */
-.abt__s:hover .abt__sc::after{ transform:scale(1.45); }
-.abt__s:hover .abt__sd{ color:var(--on-ink-1); }
+
+/* Live is an upgrade on an already-readable row, not the row becoming
+   readable: the copy goes from reading contrast to full, never up from dim. */
+.abt__s.live .abt__sm::after{ background:var(--yellow); transform:scale(1.35); }
+.abt__s.live .abt__sd{ color:var(--on-ink-1); }
+
+.abt__sc{ padding-bottom:clamp(30px,4.4vh,58px); }
+.abt__s:last-child .abt__sc{ padding-bottom:0; }
 
 .abt__sh{ max-width:24ch; }
 .abt__sd{
   margin-top:12px; max-width:64ch;
   font-size:14.5px; line-height:1.72; color:var(--on-ink-2);
-  transition:color .45s var(--e-out);
+  transition:color .5s var(--e-out);
 }
 
 .abt__foot{ margin-top:clamp(28px,4vh,48px); }
@@ -1134,24 +1140,14 @@ input,textarea{ font:inherit; color:inherit; }
      width, which wraps every title to three lines. The year stacks above its
      entry instead, and the spine moves from the content column to the whole
      row so the dot still marks the year rather than the paragraph. */
-  .abt__s{
-    grid-template-columns:1fr; gap:7px; position:relative;
-    padding-left:26px; padding-bottom:clamp(28px,4vh,44px);
-  }
+  /* A year column plus an indent leaves barely 190px for the copy at this
+     width, which wraps every title to three lines. The year stacks above its
+     entry instead, and the marker lifts out of the grid to run down the row's
+     left edge — same element, same fill, only `left` changes. */
+  .abt__s{ grid-template-columns:1fr; gap:6px; position:relative; padding-left:26px; }
   .abt__sy{ padding-top:0; }
-  .abt__sc{ padding-left:0; padding-bottom:0; }
-  .abt__sc::before,.abt__sc::after{ display:none; }
-  .abt__s::before{
-    content:''; position:absolute; left:0; top:9px; bottom:0; width:1px;
-    background:var(--rule-ink);
-  }
-  .abt__s::after{
-    content:''; position:absolute; left:-4px; top:4px; width:9px; height:9px;
-    border-radius:50%; background:var(--yellow);
-  }
-  .abt__s:last-child::before{
-    bottom:auto; height:44px; background:linear-gradient(var(--rule-ink), transparent);
-  }
+  .abt__sm{ position:absolute; left:0; top:4px; bottom:0; }
+  .abt__sc{ padding-bottom:clamp(28px,4vh,44px); }
   /* Same treatment the other heroes get on phones: the pair of actions reads
      as one full-width block rather than two stranded pills. */
   .net__acts{ width:100%; }

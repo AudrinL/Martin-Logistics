@@ -1,19 +1,31 @@
+"use client";
+
 import Link from "next/link";
+import { useRef } from "react";
+import { gsap, ScrollTrigger, useGSAP } from "@/lib/gsap";
+import { useReducedMotion } from "@/lib/hooks";
 import Arrow from "@/components/ui/Arrow";
 
 /* ───────────────────────────────────────────────────────────────────────────
-   ABOUT — the company as a story, on a timeline.
+   ABOUT — the company story on a scroll-driven timeline.
 
    This replaced three pillar cards. Cards state attributes — experience,
    infrastructure, reliability — which is what every haulier's site claims and
-   none of them prove. The same facts arranged in order become an argument
-   instead: a hardware importer got let down by other people's trucks, bought
-   fifteen of its own, and ended up carrying the region's freight. The dates
-   are the proof, so the dates lead.
+   none of them prove. The same facts in date order become an argument: a
+   hardware importer got let down by other people's trucks, bought fifteen of
+   its own, and ended up carrying the region's freight.
 
-   Five beats, condensed from the full timeline on /about. The spine is drawn
-   with a pseudo-element rather than a border so the last leg can fade out —
-   a line that stops dead under the final dot reads as a truncated list.
+   The scroll behaviour is additive, never subtractive. Every entry is fully
+   legible with no JavaScript at all — the spine is grey, the dots are grey,
+   the copy is at reading contrast. Scrolling *adds* the yellow: each leg of
+   the line fills as you pass it and each dot lights when its beat arrives.
+   Written this way on purpose, because a reveal that hides content until a
+   ScrollTrigger fires leaves the section blank when the trigger misses.
+
+   The marker is its own grid column rather than a pseudo-element on the copy,
+   which is what lets the line span the full height of a row in both layouts —
+   at phone widths the year stacks above its entry and the same marker moves
+   to the row's left edge, no second set of geometry to keep in sync.
    ─────────────────────────────────────────────────────────────────────────── */
 
 const STORY = [
@@ -45,16 +57,66 @@ const STORY = [
 ];
 
 export default function About() {
+  const root = useRef<HTMLElement>(null);
+  const reduced = useReducedMotion();
+
+  useGSAP(
+    () => {
+      const steps = gsap.utils.toArray<HTMLElement>(".abt__s");
+      if (!steps.length) return;
+
+      // Reduced motion gets the finished state, not the empty one — the yellow
+      // line is information about where you are in the story, not decoration.
+      if (reduced) {
+        gsap.set(".abt__sf", { scaleY: 1 });
+        steps.forEach((s) => s.classList.add("live"));
+        return;
+      }
+
+      steps.forEach((step) => {
+        /* The leg fills across the row's own scroll window, so the line is
+           continuous: each segment finishes exactly where the next begins. */
+        const fill = step.querySelector(".abt__sf");
+        if (fill) {
+          gsap.fromTo(
+            fill,
+            { scaleY: 0 },
+            {
+              scaleY: 1,
+              ease: "none",
+              scrollTrigger: {
+                trigger: step,
+                start: "top 78%",
+                end: "bottom 72%",
+                scrub: true,
+              },
+            },
+          );
+        }
+
+        /* Dot and copy are a class flip rather than a tween — they have two
+           states, not a range, and onLeaveBack lets the whole thing play
+           backwards when you scroll up. */
+        ScrollTrigger.create({
+          trigger: step,
+          start: "top 74%",
+          onEnter: () => step.classList.add("live"),
+          onLeaveBack: () => step.classList.remove("live"),
+        });
+      });
+    },
+    { scope: root, dependencies: [reduced] },
+  );
+
   return (
-    <section className="bay ink abt" id="about">
+    <section className="bay ink abt" id="about" ref={root}>
       <div className="wrap">
         <div className="abt__head">
           <div>
-            {/* No Reveal, no .fade on the title or its kicker. Both are the
-                section's label — the thing a visitor scans for — and a masked
-                word reveal only works if its ScrollTrigger fires. When it does
-                not, the type is in the DOM but parked out of frame and the
-                section reads as unlabelled. */}
+            {/* No masked reveal on the title or its kicker: both are the
+                section's label, and a word mask only works if its trigger
+                fires. When it does not, the type sits parked out of frame and
+                the section reads as unlabelled. */}
             <div className="kick kick--lg">Who we are</div>
             <h2 className="h h-d abt__t">About us</h2>
             <p className="h h3 abt__st">
@@ -71,8 +133,11 @@ export default function About() {
 
         <ol className="abt__tl">
           {STORY.map((s) => (
-            <li className="abt__s rise" key={s.y}>
+            <li className="abt__s" key={s.y}>
               <div className="abt__sy">{s.y}</div>
+              <div className="abt__sm" aria-hidden>
+                <i className="abt__sf" />
+              </div>
               <div className="abt__sc">
                 <h3 className="h h3 abt__sh">{s.t}</h3>
                 <p className="abt__sd">{s.d}</p>
