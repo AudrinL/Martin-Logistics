@@ -1,9 +1,6 @@
 import Beacon from "@/components/home/Beacon";
 import Reel from "@/components/home/Reel";
 import Network from "@/components/home/Network";
-import Services from "@/components/home/Services";
-import Cta from "@/components/sections/Cta";
-import Reveal from "@/components/fx/Reveal";
 
 const TICKER = [
   "Mombasa",
@@ -23,21 +20,6 @@ const PARTNERS = [
   "YITIYAN",
   "OLIU Logistics",
   "AGANZE Group",
-];
-
-const ORIGIN = [
-  {
-    tag: "01 — Origin",
-    body: "Martin Hardware began importing tiles and glass into Kigali in 2012. Three years later we stopped waiting on other people's trucks.",
-  },
-  {
-    tag: "02 — Scale",
-    body: "A hundred tractor units and a hundred and two trailers, with ten more of each joining the yard every year.",
-  },
-  {
-    tag: "03 — Reach",
-    body: "Two ocean ports, one landlocked capital, and every province in between — plus onward haulage into the DRC.",
-  },
 ];
 
 const STATS = [
@@ -75,9 +57,9 @@ function TickItems() {
 export default function Home() {
   return (
     <>
-      {/* The globe is the hero. It and the ticker are both ink, so they run
-          together; the ramp goes where the page actually changes ground, at
-          the paper section below. */}
+      {/* The globe is the hero, and the page never leaves ink after it — globe,
+          ticker, reel, beacon and the stat block all sit on the same ground, so
+          nothing here needs a ramp between sections. */}
       <Network />
 
       <div className="tick" data-marquee="46">
@@ -87,30 +69,8 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="blend blend--ink-paper" aria-hidden />
-
-      <section className="bay pap">
-        <div className="wrap">
-          <div className="kick fade">Who we are</div>
-          <Reveal as="h2" className="h h2 stmt__t" style={{ marginTop: 26 }}>
-            We started with fifteen trucks and our own cargo. Today we move the
-            region&apos;s.
-          </Reveal>
-
-          <div className="stmt__meta">
-            {ORIGIN.map((o) => (
-              <div className="rise" key={o.tag}>
-                <div className="tag">{o.tag}</div>
-                <p>{o.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <Reel />
       <Beacon />
-      <Services />
 
       <section className="bay--s ink">
         <div className="wrap">
@@ -141,8 +101,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      <Cta head="Got freight? Let's move it." parallax={-6} />
     </>
   );
 }
