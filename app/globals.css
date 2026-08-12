@@ -74,6 +74,11 @@
   --r-sm:  8px;   /* inputs, chips, small controls */
   --r-md:  14px;  /* images, figures, embedded media */
   --r-lg:  20px;  /* cards and panels */
+  /* One step above the card radius, for the free-standing panels on the home
+     page — the about pillars and the services rows. It scales with the
+     viewport because at this size a fixed radius reads as heavy on a phone
+     and mean on a wide desktop. */
+  --r-xl:  clamp(24px, 2.4vw, 38px);
 
   --bay:   clamp(120px, 16vh, 220px);
   --bay-s: clamp(80px, 10vh, 140px);
@@ -652,6 +657,139 @@ input,textarea{ font:inherit; color:inherit; }
 .net__readout b{ display:block; font-size:clamp(24px,2.6vw,38px); letter-spacing:-.02em; color:var(--yellow); font-weight:500; font-family:var(--f-head); }
 
 /* ══════════════════════════════════════════════════════════════════════════
+   ABOUT — three pillar cards on ink
+   ══════════════════════════════════════════════════════════════════════════ */
+/* Heading left, lede right, and the lede drops to its own line before the two
+   columns get close enough to read as one paragraph split in half. */
+.abt__head{
+  display:grid; grid-template-columns:minmax(0,1fr) minmax(0,44ch);
+  gap:clamp(24px,4vw,80px); align-items:end;
+}
+.abt__t{ margin-top:24px; max-width:15ch; }
+.abt__l{ padding-bottom:6px; }
+
+.abt__g{
+  margin-top:var(--gap-h);
+  display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(12px,1.4vw,20px);
+}
+/* The card. Softer than the --r-lg card step on purpose: these are the only
+   free-standing panels on the page, and the extra radius is what separates
+   them from the hard-edged full-bleed sections above and below. Padding rises
+   with the radius — a tight inset against a 38px corner leaves the first line
+   of type visibly closer to the curve than to the flat edge. */
+.abt__c{
+  position:relative;
+  border-radius:var(--r-xl); border:1px solid var(--rule-ink);
+  background:var(--ink-2);
+  padding:clamp(28px,2.6vw,42px);
+  display:flex; flex-direction:column;
+  transition:border-color .45s var(--e-out), transform .55s var(--e-out),
+             background-color .45s var(--e-out);
+}
+/* Hover is a state, not an event: surface steps up one level, border warms.
+   No glow, no cursor tracking — yellow appears once per card, on the rule. */
+.abt__c:hover{ transform:translateY(-3px); border-color:rgba(237,216,54,.34); background:var(--ink-3); }
+
+.abt__no{
+  display:flex; align-items:center; gap:11px;
+  font-family:var(--f-mono); font-size:10.5px; letter-spacing:.16em;
+  text-transform:uppercase; color:var(--on-ink-3);
+}
+.abt__no span{ color:var(--yellow); }
+/* Grows into the gap on hover — the one moving part, so the card reads as
+   responding rather than merely lighting up. */
+.abt__no i{ width:18px; height:1px; background:var(--rule-ink); flex:none; transition:width .5s var(--e-out), background-color .5s var(--e-out); }
+.abt__c:hover .abt__no i{ width:34px; background:var(--yellow); }
+
+.abt__ct{ margin-top:20px; max-width:14ch; }
+.abt__cb{ margin-top:14px; font-size:14.5px; line-height:1.7; color:var(--on-ink-2); }
+.abt__foot{ margin-top:clamp(28px,4vh,48px); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   OFFER — services grid
+   ══════════════════════════════════════════════════════════════════════════ */
+/* The display step. It exists only here: this is the one place on the home
+   page where the company names what it sells, and the rest of the type stays
+   restrained precisely so this can be loud without the page shouting. Tighter
+   tracking and leading than .h1 — at this size the default spacing that suits
+   a 40px heading opens into gaps. */
+.ofr__t{
+  margin-top:18px;
+  font-size:clamp(46px,8.4vw,132px); line-height:.92; letter-spacing:-.035em;
+}
+/* The full stop is the section's only accent — cheaper than colouring a word
+   and it keeps the heading one solid mass of type. */
+.ofr__t::after{ content:'.'; color:var(--yellow); }
+
+.ofr__sub{
+  margin-top:clamp(26px,3.4vh,44px);
+  display:flex; flex-wrap:wrap; align-items:end; justify-content:space-between;
+  gap:24px; padding-bottom:clamp(24px,3.4vh,40px);
+  border-bottom:1px solid var(--rule-ink);
+}
+.ofr__lede{ max-width:52ch; }
+.ofr__acts{ display:flex; flex-wrap:wrap; gap:12px; }
+
+/* Nine cells. The lead service takes two so the grid opens on something with
+   weight instead of seven identical squares. */
+.ofr__g{
+  margin-top:clamp(28px,4vh,48px);
+  display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(10px,1.2vw,16px);
+}
+.ofr__c--f{ grid-column:span 2; }
+
+.ofr__c{
+  position:relative; display:flex; flex-direction:column;
+  border-radius:var(--r-xl); border:1px solid var(--rule-ink);
+  background:var(--ink-2); padding:clamp(24px,2.3vw,38px);
+  min-height:clamp(230px,22vw,300px);
+  transition:border-color .45s var(--e-out), transform .55s var(--e-out),
+             background-color .45s var(--e-out);
+}
+.ofr__c:hover{ transform:translateY(-3px); border-color:rgba(237,216,54,.34); background:var(--ink-3); }
+/* These are links, so the keyboard needs to see where it is — the hover state
+   alone would leave tab users with no idea which tile is focused. */
+.ofr__c:focus-visible{ outline:2px solid var(--yellow); outline-offset:3px; }
+
+.ofr__no{ display:flex; align-items:center; gap:11px; font-family:var(--f-mono); font-size:10.5px; letter-spacing:.16em; color:var(--yellow); }
+.ofr__no i{ height:1px; width:18px; background:var(--rule-ink); flex:none; transition:width .5s var(--e-out), background-color .5s var(--e-out); }
+.ofr__c:hover .ofr__no i{ width:34px; background:var(--yellow); }
+
+.ofr__n{ margin-top:20px; max-width:16ch; transition:transform .5s var(--e-out); }
+.ofr__c:hover .ofr__n{ transform:translateX(6px); }
+.ofr__d{ margin-top:13px; max-width:46ch; font-size:14.5px; line-height:1.7; color:var(--on-ink-2); }
+
+/* Feature tile only — the extra room is what earns the extra detail. */
+.ofr__pts{ margin-top:auto; padding-top:26px; display:flex; flex-wrap:wrap; gap:10px 26px; }
+.ofr__pts li{
+  position:relative; padding-left:17px;
+  font-family:var(--f-mono); font-size:10.5px; letter-spacing:.12em;
+  text-transform:uppercase; color:var(--on-ink-2);
+}
+.ofr__pts li::before{ content:''; position:absolute; left:0; top:.5em; width:8px; height:1px; background:var(--yellow); }
+
+/* Sits bottom-right of every tile; the arrow is the affordance that says the
+   whole card is a link. */
+.ofr__go{
+  position:absolute; right:clamp(20px,2vw,32px); bottom:clamp(20px,2vw,32px);
+  color:var(--on-ink-3); transition:transform .45s var(--e-out), color .4s;
+}
+.ofr__go svg{ width:15px; height:15px; }
+.ofr__c:hover .ofr__go{ color:var(--yellow); transform:translate(3px,-3px); }
+/* The feature tile ends in its own list, so its arrow would collide. */
+.ofr__c--f .ofr__go{ display:none; }
+
+.ofr__c--cta{ background:var(--yellow); border-color:var(--yellow); color:var(--ink); }
+.ofr__c--cta:hover{ background:var(--yellow); border-color:var(--yellow); }
+.ofr__c--cta .ofr__no{ color:rgba(11,11,12,.55); }
+.ofr__c--cta .ofr__no i{ background:rgba(11,11,12,.28); }
+.ofr__c--cta:hover .ofr__no i{ background:var(--ink); }
+.ofr__c--cta .ofr__d{ color:rgba(11,11,12,.66); }
+.ofr__c--cta .ofr__go{ color:rgba(11,11,12,.5); }
+.ofr__c--cta:hover .ofr__go{ color:var(--ink); }
+
+
+/* ══════════════════════════════════════════════════════════════════════════
    FLEET RAIL
    ══════════════════════════════════════════════════════════════════════════ */
 .rail{ position:relative; background:var(--paper); color:var(--on-pap-1); }
@@ -908,6 +1046,17 @@ input,textarea{ font:inherit; color:inherit; }
   .cta__in{ max-width:none; }
   .cta__truck{ width:min(104%,640px); right:-4%; bottom:0; }
   .svcblk{ grid-template-columns:1fr; gap:12px; }
+  /* Two columns would leave one card stranded on its own row, so the pillars
+     go single-file and the lede stops competing with the heading. */
+  .abt__head{ grid-template-columns:1fr; align-items:start; gap:26px; }
+  .abt__l{ padding-bottom:0; }
+  .abt__g{ grid-template-columns:1fr; }
+  .abt__ct{ max-width:22ch; }
+  /* Both mastheads go single-column at the same width, so the two sections
+     keep reading as a pair on the way down. */
+  /* Feature tile stops spanning; every tile is the same width from here down. */
+  .ofr__g{ grid-template-columns:repeat(2,1fr); }
+  .ofr__c--f{ grid-column:span 2; }
   .tl__row{ grid-template-columns:1fr; gap:10px; }
   .net{ height:220vh; }
   .net__readout{ position:static; text-align:left; margin-top:18px; }
@@ -949,6 +1098,11 @@ input,textarea{ font:inherit; color:inherit; }
      as one full-width block rather than two stranded pills. */
   .net__acts{ width:100%; }
   .net__acts .btn{ flex:1; justify-content:center; }
+  /* The row title needs the full width at this size, so the index moves above
+     it rather than stealing a column from it. */
+  .ofr__g{ grid-template-columns:1fr; }
+  .ofr__c--f{ grid-column:span 1; }
+  .ofr__acts .btn{ flex:1; justify-content:center; }
 }
 
 @media (prefers-reduced-motion: reduce){
@@ -968,6 +1122,10 @@ input,textarea{ font:inherit; color:inherit; }
   .rail__track{ flex-direction:column; align-items:stretch; transform:none !important; padding-block:var(--bay); }
   .rail__card,.rail__intro{ width:auto; height:auto; min-height:340px; }
   .fade,.rise{ opacity:1 !important; transform:none !important; }
+  /* The accordion still opens and closes — the global transition kill above
+     just makes it instant, which is the correct behaviour here rather than
+     leaving every panel expanded. */
+  .abt__c:hover{ transform:none; }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════

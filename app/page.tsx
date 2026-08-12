@@ -1,4 +1,6 @@
+import About from "@/components/home/About";
 import Beacon from "@/components/home/Beacon";
+import Offer from "@/components/home/Offer";
 import Reel from "@/components/home/Reel";
 import Network from "@/components/home/Network";
 
@@ -68,6 +70,12 @@ export default function Home() {
           <TickItems />
         </div>
       </div>
+
+      {/* The ticker hands straight into the two read-it sections — the globe
+          and the reel are both full-screen scrubs, so putting the flat copy
+          between them gives the page somewhere to breathe. */}
+      <About />
+      <Offer />
 
       <Reel />
       <Beacon />
