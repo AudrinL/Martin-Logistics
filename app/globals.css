@@ -613,9 +613,18 @@ input,textarea{ font:inherit; color:inherit; }
   padding-block:calc(var(--nav-h) + 26px) clamp(30px,5vh,60px);
   pointer-events:none;
 }
-.net__head{ max-width:31ch; }
-.net__title{ margin-top:16px; }
-.net__lede{ margin-top:16px; max-width:38ch; font-size:14.5px; line-height:1.68; color:var(--on-ink-2); }
+/* Hero measure, not section measure. The h1 sets its own line breaks, so the
+   head only has to be wide enough not to fight them. */
+.net__head{ max-width:46ch; }
+.net__title{ margin-top:18px; max-width:14ch; }
+/* Third line drops to the dot-field grey so the two facts lead and the claim
+   sits under them — one weight change instead of a second colour. */
+.net__title em{ font-style:normal; color:var(--on-ink-3); }
+.net__lede{ margin-top:20px; max-width:44ch; font-size:14.5px; line-height:1.68; color:var(--on-ink-2); }
+
+/* .net__ui is pointer-events:none so the globe stays grabbable through the
+   copy. The buttons are the one thing in there that has to take a click. */
+.net__acts{ margin-top:clamp(22px,3vh,34px); display:flex; flex-wrap:wrap; gap:12px; pointer-events:auto; }
 
 .net__legs{ display:flex; gap:0; flex-wrap:wrap; border-top:1px solid var(--rule-ink); max-width:min(100%,760px); }
 .net__leg{
@@ -936,6 +945,10 @@ input,textarea{ font:inherit; color:inherit; }
   .rail__intro{ width:80vw; }
   .cta__truck{ width:132%; right:-16%; }
   .net__legs{ display:none; }
+  /* Same treatment the other heroes get on phones: the pair of actions reads
+     as one full-width block rather than two stranded pills. */
+  .net__acts{ width:100%; }
+  .net__acts .btn{ flex:1; justify-content:center; }
 }
 
 @media (prefers-reduced-motion: reduce){

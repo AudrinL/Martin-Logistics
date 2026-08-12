@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { ScrollTrigger, useGSAP } from "@/lib/gsap";
+import { gsap, ScrollTrigger, useGSAP } from "@/lib/gsap";
 import { useReducedMotion } from "@/lib/hooks";
 import { createNetworkRenderer, LEGS, type MapData } from "@/lib/networkGlobe";
+import Arrow from "@/components/ui/Arrow";
 
 const LEG_ROWS = [
   { no: "Leg 01", city: "Mombasa", note: "Kenya · port of entry" },
@@ -99,6 +101,17 @@ export default function Network() {
         return;
       }
 
+      /* The hero copy enters on its own clock rather than on the scrub — the
+         globe's arc is scroll-driven, but the headline has to be legible in
+         the first frame the visitor sees, before they have scrolled at all. */
+      gsap
+        .timeline({ defaults: { ease: "expo.out" } })
+        .from(".net__kick", { opacity: 0, y: 12, duration: 0.8 })
+        .from(".net__title", { opacity: 0, y: 24, duration: 1.15 }, "-=0.52")
+        .from(".net__lede", { opacity: 0, y: 18, duration: 0.9 }, "-=0.78")
+        .from(".net__acts", { opacity: 0, y: 18, duration: 0.9 }, "-=0.72")
+        .from(".net__legs", { opacity: 0, duration: 1 }, "-=0.7");
+
       ScrollTrigger.create({
         trigger: root.current,
         start: "top top",
@@ -128,17 +141,32 @@ export default function Network() {
 
         <div className="net__ui">
           <div className="net__head">
-            <div className="kick">The network</div>
-            <h2 className="h h2 net__title">
+            <div className="kick net__kick">
+              Martin Hardware Ltd — Logistics &amp; Transport
+            </div>
+            <h1 className="h h1 net__title">
               Two ports.
               <br />
               One corridor.
-            </h2>
+              <br />
+              <em>One operator.</em>
+            </h1>
             <p className="net__lede">
-              Cargo lands at Mombasa or Dar es Salaam and reaches Kigali on our own
-              trailers — then keeps going, west into the DRC and out to every
-              province.
+              Cargo lands at Mombasa or Dar es Salaam and reaches Kigali on our
+              own trailers — then keeps going, west into the DRC and out to
+              every province. A hundred tractor units, a hundred and two
+              trailers, one number to call.
             </p>
+            <div className="net__acts">
+              <Link href="/contact" className="btn btn--fill">
+                <span>Get a quote</span>
+                <Arrow />
+              </Link>
+              <Link href="/fleet" className="btn btn--line">
+                <span>See the fleet</span>
+                <Arrow />
+              </Link>
+            </div>
           </div>
 
           <dl className="net__legs">
