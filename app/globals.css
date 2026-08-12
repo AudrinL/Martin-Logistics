@@ -697,64 +697,94 @@ input,textarea{ font:inherit; color:inherit; }
 .abt__st{ margin-top:22px; max-width:26ch; color:var(--on-ink-1); }
 .abt__l{ padding-bottom:4px; }
 
-/* ── Timeline ───────────────────────────────────────────────────────────── */
-/* An <ol> because the order is the point — but the reset only zeroes <ul>, so
-   this has to drop the browser's marker and 40px indent itself. */
-.abt__tl{
-  margin:clamp(34px,5vh,64px) 0 0; padding:0; list-style:none;
+/* ── Corridor timeline ──────────────────────────────────────────────────── */
+/* The story runs sideways because the business does. Height is written by the
+   script (viewport + travel); this is the no-JS shape, where the track is just
+   a swipeable row and nothing is pinned. */
+.abt__rail{ position:relative; margin-top:clamp(30px,4.4vh,56px); }
+.abt__stick{
+  position:sticky; top:0; height:100svh; overflow-x:auto; overflow-y:hidden;
+  scrollbar-width:none;
 }
-/* Three columns: year, marker, copy. The marker is a real column rather than a
-   pseudo-element on the copy, so the line stretches to the row's full height
-   for free — and at phone widths it only has to change its `left`, not its
-   whole geometry. */
-.abt__s{
-  display:grid; grid-template-columns:clamp(88px,10vw,164px) 1px minmax(0,1fr);
-  gap:0 clamp(16px,2.6vw,40px);
+.abt__stick::-webkit-scrollbar{ display:none; }
+/* Once the script has taken over, the pin owns the horizontal travel and the
+   container must not scroll on its own. */
+.abt[data-js="on"] .abt__stick{ overflow:hidden; }
+
+/* The road. Full-bleed and dead centre — the milestones hang off it. */
+.abt__road{
+  position:absolute; left:0; right:0; top:50%; height:1px; z-index:1;
+  background:var(--rule-ink); pointer-events:none;
 }
-/* Years are the argument, so they sit at heading weight rather than as a mono
-   caption. Tabular figures keep the column aligned on its digits — "2012" and
-   "Today" already disagree about width, no need to let the numerals drift too. */
-.abt__sy{
-  font-family:var(--f-head); font-weight:500; font-variant-numeric:tabular-nums;
-  font-size:clamp(18px,1.6vw,24px); letter-spacing:-.01em; color:var(--yellow);
-  padding-top:2px;
+/* Paves itself as you travel. Transform only, written straight from the
+   scrub — no layout, no repaint of the line itself. */
+.abt__paved{
+  position:absolute; inset:0; background:var(--yellow);
+  transform:scaleX(0); transform-origin:0 50%;
 }
 
-/* Marker column. Grey at rest and readable with no JS — the yellow is added
-   by scroll, never required to see the content. */
-.abt__sm{ position:relative; width:1px; background:var(--rule-ink); }
-/* The dot. Sits on the line, dim until its beat arrives. */
-.abt__sm::after{
-  content:''; position:absolute; left:-4px; top:6px; width:9px; height:9px;
+.abt__track{
+  position:relative; z-index:2; margin:0; padding:0 var(--pad); list-style:none;
+  height:100%; display:flex; align-items:center; gap:clamp(20px,3.4vw,72px);
+  width:max-content; will-change:transform;
+}
+
+/* Each milestone is a full-height column with the copy parked off the road,
+   alternating side to side so the eye zig-zags along the route. */
+.abt__s{
+  position:relative; flex:none; height:100%;
+  width:min(78vw,440px);
+  display:flex; flex-direction:column; justify-content:center;
+}
+.abt__sc{ position:absolute; left:0; width:100%; }
+/* Clear of the road by the stem's length plus the dot. */
+.abt__s--a .abt__sc{ bottom:calc(50% + 74px); }
+.abt__s--b .abt__sc{ top:calc(50% + 74px); }
+
+/* Stem from the copy down (or up) to the road. */
+.abt__stem{
+  position:absolute; left:13px; width:1px; background:var(--rule-ink);
+  transition:background-color .5s var(--e-out);
+}
+.abt__s--a .abt__stem{ bottom:50%; height:64px; }
+.abt__s--b .abt__stem{ top:50%; height:64px; }
+
+.abt__dot{
+  position:absolute; left:9px; top:50%; width:9px; height:9px; margin-top:-4px;
   border-radius:50%; background:var(--on-ink-3);
   transition:background-color .45s var(--e-out), transform .45s var(--e-out);
 }
-/* The fill. Scrubbed 0 → 1 across the row's own scroll window, so the legs
-   join end to end and read as one line drawing itself down the section. */
-.abt__sf{
-  position:absolute; inset:0; background:var(--yellow);
-  transform:scaleY(0); transform-origin:50% 0;
-}
-/* A line that stops dead under the last dot reads as a truncated list, so the
-   final leg fades out — and the fill fades with it. */
-.abt__s:last-child .abt__sm{ background:linear-gradient(var(--rule-ink), transparent); }
-.abt__s:last-child .abt__sf{
-  background:linear-gradient(var(--yellow), transparent);
-}
-
-/* Live is an upgrade on an already-readable row, not the row becoming
-   readable: the copy goes from reading contrast to full, never up from dim. */
-.abt__s.live .abt__sm::after{ background:var(--yellow); transform:scale(1.35); }
+/* Passing a milestone lights it. An upgrade on an already-readable entry —
+   the copy goes from reading contrast to full, never up from dim. */
+.abt__s.live .abt__dot{ background:var(--yellow); transform:scale(1.4); }
+.abt__s.live .abt__stem{ background:rgba(237,216,54,.5); }
 .abt__s.live .abt__sd{ color:var(--on-ink-1); }
 
-.abt__sc{ padding-bottom:clamp(30px,4.4vh,58px); }
-.abt__s:last-child .abt__sc{ padding-bottom:0; }
-
-.abt__sh{ max-width:24ch; }
+/* Years are the argument, so they sit at heading weight rather than as a mono
+   caption. Tabular figures stop the numerals drifting between milestones. */
+.abt__sy{
+  font-family:var(--f-head); font-weight:500; font-variant-numeric:tabular-nums;
+  font-size:clamp(26px,2.6vw,40px); letter-spacing:-.02em; color:var(--yellow);
+  line-height:1;
+}
+.abt__sh{ margin-top:14px; max-width:20ch; }
 .abt__sd{
-  margin-top:12px; max-width:64ch;
+  margin-top:12px; max-width:40ch;
   font-size:14.5px; line-height:1.72; color:var(--on-ink-2);
   transition:color .5s var(--e-out);
+}
+
+/* Where you are on the road, in the corner — the same readout language the
+   globe uses for kilometres covered. */
+.abt__meta{
+  position:absolute; right:var(--pad); bottom:clamp(26px,5vh,54px); z-index:3;
+  text-align:right; font-family:var(--f-mono); font-size:10.5px;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--on-ink-3);
+}
+.abt__meta b{
+  display:block; font-family:var(--f-head); font-weight:500;
+  font-variant-numeric:tabular-nums; font-size:clamp(24px,2.6vw,38px);
+  letter-spacing:-.02em; color:var(--yellow);
 }
 
 .abt__foot{ margin-top:clamp(28px,4vh,48px); }
@@ -1089,13 +1119,10 @@ input,textarea{ font:inherit; color:inherit; }
   .cta__in{ max-width:none; }
   .cta__truck{ width:min(104%,640px); right:-4%; bottom:0; }
   .svcblk{ grid-template-columns:1fr; gap:12px; }
-  /* Two columns would leave one card stranded on its own row, so the pillars
-     go single-file and the lede stops competing with the heading. */
-  .abt__head{ grid-template-columns:1fr; align-items:start; gap:26px; }
-  .abt__l{ padding-bottom:0; }
-  .abt__sh{ max-width:30ch; }
   /* Both mastheads go single-column at the same width, so the two sections
      keep reading as a pair on the way down. */
+  .abt__head{ grid-template-columns:1fr; align-items:start; gap:26px; }
+  .abt__l{ padding-bottom:0; }
   /* Feature tile stops spanning; every tile is the same width from here down. */
   .ofr__g{ grid-template-columns:repeat(2,1fr); }
   .ofr__c--f{ grid-column:span 2; }
@@ -1144,10 +1171,13 @@ input,textarea{ font:inherit; color:inherit; }
      width, which wraps every title to three lines. The year stacks above its
      entry instead, and the marker lifts out of the grid to run down the row's
      left edge — same element, same fill, only `left` changes. */
-  .abt__s{ grid-template-columns:1fr; gap:6px; position:relative; padding-left:26px; }
-  .abt__sy{ padding-top:0; }
-  .abt__sm{ position:absolute; left:0; top:4px; bottom:0; }
-  .abt__sc{ padding-bottom:clamp(28px,4vh,44px); }
+  /* Narrower milestones and a shorter stem, so a phone-height frame still
+     fits the copy above and below the road. */
+  .abt__s{ width:min(84vw,340px); }
+  .abt__s--a .abt__sc{ bottom:calc(50% + 54px); }
+  .abt__s--b .abt__sc{ top:calc(50% + 54px); }
+  .abt__s--a .abt__stem,.abt__s--b .abt__stem{ height:44px; }
+  .abt__meta{ display:none; }
   /* Same treatment the other heroes get on phones: the pair of actions reads
      as one full-width block rather than two stranded pills. */
   .net__acts{ width:100%; }
@@ -1179,6 +1209,19 @@ input,textarea{ font:inherit; color:inherit; }
   /* Tiles hold still; the colour and border states are left alone, so hover
      still reads without anything moving. */
   .ofr__c:hover{ transform:none; }
+  /* The corridor unrolls into a plain vertical list. Sideways travel is the
+     one thing here that cannot be made gentle — it is the motion, not a
+     flourish on top of it — so it goes rather than slows. */
+  .abt__rail{ height:auto !important; }
+  .abt__stick{ position:static; height:auto; overflow:visible; }
+  .abt__track{
+    flex-direction:column; align-items:stretch; width:auto;
+    height:auto; transform:none !important; gap:clamp(30px,5vh,56px);
+  }
+  .abt__s{ width:auto; height:auto; }
+  .abt__sc{ position:static; }
+  .abt__s--a .abt__sc,.abt__s--b .abt__sc{ inset:auto; }
+  .abt__road,.abt__stem,.abt__dot,.abt__meta{ display:none; }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
