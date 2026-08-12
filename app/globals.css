@@ -119,6 +119,18 @@ input,textarea{ font:inherit; color:inherit; }
   font-family:var(--f-head); font-weight:600;
   letter-spacing:-.022em; line-height:1.06;
 }
+/* Display step. Used only by the two home-page section titles — "About us"
+   and "Our services" — which name what the section is rather than describing
+   it, so they work as labels the eye finds while scrolling. Tighter tracking
+   and leading than .h1: the spacing that suits a 40px heading opens into gaps
+   at three times the size. */
+.h-d{
+  font-size:clamp(40px, 6.4vw, 92px); line-height:.94; letter-spacing:-.032em;
+}
+/* The full stop is the only accent these headings carry — cheaper than
+   colouring a word, and it keeps the title one solid mass of type. */
+.h-d::after{ content:'.'; color:var(--yellow); }
+
 .h1{ font-size:clamp(33px, 4.3vw, 64px); }
 .h2{ font-size:clamp(26px, 2.7vw, 40px); }
 .h3{ font-size:clamp(20px, 1.85vw, 26px); line-height:1.14; }
@@ -659,14 +671,20 @@ input,textarea{ font:inherit; color:inherit; }
 /* ══════════════════════════════════════════════════════════════════════════
    ABOUT — three pillar cards on ink
    ══════════════════════════════════════════════════════════════════════════ */
-/* Heading left, lede right, and the lede drops to its own line before the two
-   columns get close enough to read as one paragraph split in half. */
+/* Title left, lede right, closed by a rule — the same masthead the services
+   section opens with, so the two read as a pair on the way down. The lede
+   drops to its own line before the columns get close enough to read as one
+   paragraph split in half. */
 .abt__head{
-  display:grid; grid-template-columns:minmax(0,1fr) minmax(0,44ch);
+  display:grid; grid-template-columns:minmax(0,1fr) minmax(0,46ch);
   gap:clamp(24px,4vw,80px); align-items:end;
+  padding-bottom:clamp(26px,3.6vh,44px); border-bottom:1px solid var(--rule-ink);
 }
-.abt__t{ margin-top:24px; max-width:15ch; }
-.abt__l{ padding-bottom:6px; }
+.abt__t{ margin-top:16px; }
+/* Sits under the display title rather than beside it — at 92px the title owns
+   its line, and a statement this long would wrap badly next to it. */
+.abt__st{ margin-top:22px; max-width:26ch; color:var(--on-ink-1); }
+.abt__l{ padding-bottom:4px; }
 
 .abt__g{
   margin-top:var(--gap-h);
@@ -708,18 +726,7 @@ input,textarea{ font:inherit; color:inherit; }
 /* ══════════════════════════════════════════════════════════════════════════
    OFFER — services grid
    ══════════════════════════════════════════════════════════════════════════ */
-/* The display step. It exists only here: this is the one place on the home
-   page where the company names what it sells, and the rest of the type stays
-   restrained precisely so this can be loud without the page shouting. Tighter
-   tracking and leading than .h1 — at this size the default spacing that suits
-   a 40px heading opens into gaps. */
-.ofr__t{
-  margin-top:18px;
-  font-size:clamp(46px,8.4vw,132px); line-height:.92; letter-spacing:-.035em;
-}
-/* The full stop is the section's only accent — cheaper than colouring a word
-   and it keeps the heading one solid mass of type. */
-.ofr__t::after{ content:'.'; color:var(--yellow); }
+.ofr__t{ margin-top:16px; }
 
 .ofr__sub{
   margin-top:clamp(26px,3.4vh,44px);

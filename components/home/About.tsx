@@ -44,10 +44,13 @@ export default function About() {
       <div className="wrap">
         <div className="abt__head">
           <div>
-            <div className="kick fade">About Martin Logistics</div>
-            <Reveal as="h2" className="h h2 abt__t">
-              The logistics arm of Martin Hardware Ltd.
+            <div className="kick fade">Who we are</div>
+            <Reveal as="h2" className="h h-d abt__t">
+              About us
             </Reveal>
+            <p className="h h3 abt__st rise">
+              The logistics arm of Martin Hardware Ltd.
+            </p>
           </div>
           <p className="lede abt__l rise">
             We started as a hardware importer that got tired of missed

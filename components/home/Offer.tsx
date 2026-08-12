@@ -66,7 +66,7 @@ export default function Offer() {
     <section className="bay ink ofr" id="services">
       <div className="wrap">
         <div className="kick fade">What we do</div>
-        <Reveal as="h2" className="h ofr__t">
+        <Reveal as="h2" className="h h-d ofr__t">
           Our services
         </Reveal>
 
