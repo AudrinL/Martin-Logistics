@@ -680,7 +680,7 @@ input,textarea{ font:inherit; color:inherit; }
 .net__readout b{ display:block; font-size:clamp(24px,2.6vw,38px); letter-spacing:-.02em; color:var(--yellow); font-weight:500; font-family:var(--f-head); }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   ABOUT — three pillar cards on ink
+   ABOUT — the company story on a timeline
    ══════════════════════════════════════════════════════════════════════════ */
 /* Title left, lede right, closed by a rule — the same masthead the services
    section opens with, so the two read as a pair on the way down. The lede
@@ -697,41 +697,60 @@ input,textarea{ font:inherit; color:inherit; }
 .abt__st{ margin-top:22px; max-width:26ch; color:var(--on-ink-1); }
 .abt__l{ padding-bottom:4px; }
 
-.abt__g{
-  margin-top:var(--gap-h);
-  display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(12px,1.4vw,20px);
+/* ── Timeline ───────────────────────────────────────────────────────────── */
+/* An <ol> because the order is the point — but the reset only zeroes <ul>, so
+   this has to drop the browser's marker and 40px indent itself. */
+.abt__tl{
+  margin:clamp(34px,5vh,64px) 0 0; padding:0; list-style:none;
 }
-/* The card. Softer than the --r-lg card step on purpose: these are the only
-   free-standing panels on the page, and the extra radius is what separates
-   them from the hard-edged full-bleed sections above and below. Padding rises
-   with the radius — a tight inset against a 38px corner leaves the first line
-   of type visibly closer to the curve than to the flat edge. */
-.abt__c{
+.abt__s{
+  display:grid; grid-template-columns:clamp(88px,10vw,164px) minmax(0,1fr);
+  gap:clamp(16px,3vw,52px);
+}
+/* Years are the argument, so they sit at heading weight rather than as a mono
+   caption. Tabular figures keep the column aligned on its digits — "2012" and
+   "Today" already disagree about width, no need to let the numerals drift too. */
+.abt__sy{
+  font-family:var(--f-head); font-weight:500; font-variant-numeric:tabular-nums;
+  font-size:clamp(18px,1.6vw,24px); letter-spacing:-.01em; color:var(--yellow);
+  padding-top:2px;
+}
+
+/* The spine and its dot are drawn on the content column so the line runs
+   between the entries rather than around them. */
+.abt__sc{
   position:relative;
-  border-radius:var(--r-xl); border:1px solid var(--rule-ink);
-  background:var(--ink-2);
-  padding:clamp(28px,2.6vw,42px);
-  display:flex; flex-direction:column;
-  transition:border-color .45s var(--e-out), transform .55s var(--e-out),
-             background-color .45s var(--e-out);
+  padding-left:clamp(24px,2.4vw,42px);
+  padding-bottom:clamp(30px,4.4vh,58px);
 }
-/* Hover is a state, not an event: surface steps up one level, border warms.
-   No glow, no cursor tracking — yellow appears once per card, on the rule. */
-.abt__c:hover{ transform:translateY(-3px); border-color:rgba(237,216,54,.34); background:var(--ink-3); }
-
-.abt__no{
-  display:flex; align-items:center; gap:11px;
-  font-family:var(--f-mono); font-size:10.5px; letter-spacing:.16em;
-  text-transform:uppercase; color:var(--on-ink-3);
+.abt__sc::before{
+  content:''; position:absolute; left:0; top:11px; bottom:0; width:1px;
+  background:var(--rule-ink);
 }
-.abt__no span{ color:var(--yellow); }
-/* Grows into the gap on hover — the one moving part, so the card reads as
-   responding rather than merely lighting up. */
-.abt__no i{ width:18px; height:1px; background:var(--rule-ink); flex:none; transition:width .5s var(--e-out), background-color .5s var(--e-out); }
-.abt__c:hover .abt__no i{ width:34px; background:var(--yellow); }
+.abt__sc::after{
+  content:''; position:absolute; left:-4px; top:6px; width:9px; height:9px;
+  border-radius:50%; background:var(--yellow);
+  transition:transform .45s var(--e-out);
+}
+/* A line that stops dead under the last dot reads as a truncated list, so the
+   final leg fades instead — and it has no entry beneath it to space away from. */
+.abt__s:last-child .abt__sc{ padding-bottom:0; }
+.abt__s:last-child .abt__sc::before{
+  bottom:auto; height:clamp(40px,6vh,80px);
+  background:linear-gradient(var(--rule-ink), transparent);
+}
+/* One moving part per row: the dot swells, the body copy comes up to full
+   strength. No card to lift, so the row itself stays put. */
+.abt__s:hover .abt__sc::after{ transform:scale(1.45); }
+.abt__s:hover .abt__sd{ color:var(--on-ink-1); }
 
-.abt__ct{ margin-top:20px; max-width:14ch; }
-.abt__cb{ margin-top:14px; font-size:14.5px; line-height:1.7; color:var(--on-ink-2); }
+.abt__sh{ max-width:24ch; }
+.abt__sd{
+  margin-top:12px; max-width:64ch;
+  font-size:14.5px; line-height:1.72; color:var(--on-ink-2);
+  transition:color .45s var(--e-out);
+}
+
 .abt__foot{ margin-top:clamp(28px,4vh,48px); }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -1068,8 +1087,7 @@ input,textarea{ font:inherit; color:inherit; }
      go single-file and the lede stops competing with the heading. */
   .abt__head{ grid-template-columns:1fr; align-items:start; gap:26px; }
   .abt__l{ padding-bottom:0; }
-  .abt__g{ grid-template-columns:1fr; }
-  .abt__ct{ max-width:22ch; }
+  .abt__sh{ max-width:30ch; }
   /* Both mastheads go single-column at the same width, so the two sections
      keep reading as a pair on the way down. */
   /* Feature tile stops spanning; every tile is the same width from here down. */
@@ -1112,6 +1130,28 @@ input,textarea{ font:inherit; color:inherit; }
   .rail__intro{ width:80vw; }
   .cta__truck{ width:132%; right:-16%; }
   .net__legs{ display:none; }
+  /* A year column plus an indent leaves barely 190px for the copy at this
+     width, which wraps every title to three lines. The year stacks above its
+     entry instead, and the spine moves from the content column to the whole
+     row so the dot still marks the year rather than the paragraph. */
+  .abt__s{
+    grid-template-columns:1fr; gap:7px; position:relative;
+    padding-left:26px; padding-bottom:clamp(28px,4vh,44px);
+  }
+  .abt__sy{ padding-top:0; }
+  .abt__sc{ padding-left:0; padding-bottom:0; }
+  .abt__sc::before,.abt__sc::after{ display:none; }
+  .abt__s::before{
+    content:''; position:absolute; left:0; top:9px; bottom:0; width:1px;
+    background:var(--rule-ink);
+  }
+  .abt__s::after{
+    content:''; position:absolute; left:-4px; top:4px; width:9px; height:9px;
+    border-radius:50%; background:var(--yellow);
+  }
+  .abt__s:last-child::before{
+    bottom:auto; height:44px; background:linear-gradient(var(--rule-ink), transparent);
+  }
   /* Same treatment the other heroes get on phones: the pair of actions reads
      as one full-width block rather than two stranded pills. */
   .net__acts{ width:100%; }
@@ -1140,10 +1180,9 @@ input,textarea{ font:inherit; color:inherit; }
   .rail__track{ flex-direction:column; align-items:stretch; transform:none !important; padding-block:var(--bay); }
   .rail__card,.rail__intro{ width:auto; height:auto; min-height:340px; }
   .fade,.rise{ opacity:1 !important; transform:none !important; }
-  /* The accordion still opens and closes — the global transition kill above
-     just makes it instant, which is the correct behaviour here rather than
-     leaving every panel expanded. */
-  .abt__c:hover{ transform:none; }
+  /* Tiles hold still; the colour and border states are left alone, so hover
+     still reads without anything moving. */
+  .ofr__c:hover{ transform:none; }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
