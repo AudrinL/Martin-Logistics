@@ -144,6 +144,17 @@ input,textarea{ font:inherit; color:inherit; }
 .kick::before{ content:''; width:22px; height:1px; background:var(--yellow); flex:none; }
 .pap .kick{ color:var(--on-pap-2); }
 
+/* Larger kicker for the two home-page section labels. At 60% opacity and 11px
+   the standard kicker is a whisper — fine above a heading that carries the
+   section, too quiet when it IS the label. Full-brightness type and a longer,
+   2px rule, so it holds its own next to a 92px title. */
+.kick--lg{
+  font-size:clamp(13px,1.15vw,17px); letter-spacing:.2em; gap:14px;
+  color:var(--on-ink-1);
+}
+.kick--lg::before{ width:40px; height:2px; }
+.pap .kick--lg{ color:var(--on-pap-1); }
+
 .lede{
   font-size:clamp(15px,1.05vw,17.5px); line-height:1.68;
   color:var(--on-ink-2); max-width:56ch;

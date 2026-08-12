@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Reveal from "@/components/fx/Reveal";
 import Arrow from "@/components/ui/Arrow";
 
 /* ───────────────────────────────────────────────────────────────────────────
@@ -65,10 +64,9 @@ export default function Offer() {
   return (
     <section className="bay ink ofr" id="services">
       <div className="wrap">
-        <div className="kick fade">What we do</div>
-        <Reveal as="h2" className="h h-d ofr__t">
-          Our services
-        </Reveal>
+        {/* Plain text, for the same reason as the about title — see About.tsx. */}
+        <div className="kick kick--lg">What we do</div>
+        <h2 className="h h-d ofr__t">Our services</h2>
 
         <div className="ofr__sub">
           <p className="lede ofr__lede rise">

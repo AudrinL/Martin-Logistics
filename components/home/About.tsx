@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Reveal from "@/components/fx/Reveal";
 import Arrow from "@/components/ui/Arrow";
 
 /* ───────────────────────────────────────────────────────────────────────────
@@ -44,11 +43,15 @@ export default function About() {
       <div className="wrap">
         <div className="abt__head">
           <div>
-            <div className="kick fade">Who we are</div>
-            <Reveal as="h2" className="h h-d abt__t">
-              About us
-            </Reveal>
-            <p className="h h3 abt__st rise">
+            {/* No Reveal, no .fade on the title or its kicker. Both are the
+                section's label — the thing a visitor scans for — and a masked
+                word reveal only works if its ScrollTrigger fires. When it does
+                not, the type is in the DOM but parked out of frame and the
+                section reads as unlabelled. Not worth the risk for two lines;
+                the cards below still animate in. */}
+            <div className="kick kick--lg">Who we are</div>
+            <h2 className="h h-d abt__t">About us</h2>
+            <p className="h h3 abt__st">
               The logistics arm of Martin Hardware Ltd.
             </p>
           </div>
